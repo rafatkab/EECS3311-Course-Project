@@ -1,0 +1,736 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>280</x>
+      <y>70</y>
+      <w>1370</w>
+      <h>1570</h>
+    </coordinates>
+    <panel_attributes>AI Study Assistant System
+halign=left</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLActor</id>
+    <coordinates>
+      <x>75</x>
+      <y>730</y>
+      <w>130</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Student / User</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLActor</id>
+    <coordinates>
+      <x>1730</x>
+      <y>750</y>
+      <w>150</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>External AI Service
+(LLM / AI API)</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>140</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC01
+Create Course</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>265</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC02
+Upload Learning
+Materials</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>390</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC03
+Generate Document
+Summary</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>515</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC04
+Extract Important
+Concepts</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>640</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC05
+Ask Course
+Question</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>765</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC06
+Generate Personalized
+Study Plan</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>890</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC07
+Generate
+Flashcards</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>1015</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC08
+Generate
+Quiz</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>1140</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC09
+Complete &amp; Submit Quiz
+and Receive Feedback</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>1265</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC10
+View Calendar</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>1390</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>UC10.1
+Manage Calendar
+Events</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>395</x>
+      <y>1515</y>
+      <w>290</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>S01
+Maintain Study
+Profile</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>265</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Process Uploaded
+Learning Material</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>390</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Summarize Content
+with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>515</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Extract Concepts
+with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>640</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Generate Contextual
+Course Answer</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>685</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Generate Study
+Recommendations with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>795</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Build and Validate
+Study Schedule</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>1230</x>
+      <y>795</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Sync Study Sessions
+to Calendar</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>890</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Generate Flashcard
+Content with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>1015</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Generate Quiz
+Content with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>880</x>
+      <y>1140</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Grade Quiz</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>1230</x>
+      <y>1092</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Grade Objective
+Questions</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>1230</x>
+      <y>1205</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Grade Complex
+Responses with AI</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>1230</x>
+      <y>1390</y>
+      <w>250</w>
+      <h>74</h>
+    </coordinates>
+    <panel_attributes>Validate and Store
+Calendar Event</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>162</y>
+      <w>230</w>
+      <h>638</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;623.0;215.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>287</y>
+      <w>230</w>
+      <h>513</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;498.0;215.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>412</y>
+      <w>230</w>
+      <h>388</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;373.0;215.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>537</y>
+      <w>230</w>
+      <h>263</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;248.0;215.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>662</y>
+      <w>230</w>
+      <h>138</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;123.0;215.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>47</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;32.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>172</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;157.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>297</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;282.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>422</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;407.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>547</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;532.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>672</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;657.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>180</x>
+      <y>770</y>
+      <w>230</w>
+      <h>797</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;215.0;782.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>287</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>412</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>537</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>662</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>707</y>
+      <w>225</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;95.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>787</y>
+      <w>225</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;45.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>787</y>
+      <w>575</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;560.0;45.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>912</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>1037</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>1162</y>
+      <w>225</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;210.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>1412</y>
+      <w>575</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>15.0;15.0;560.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1215</x>
+      <y>817</y>
+      <w>310</w>
+      <h>625</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;include&gt;&gt;</panel_attributes>
+    <additional_attributes>265.0;15.0;295.0;15.0;295.0;610.0;15.0;610.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>1114</y>
+      <w>130</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;extend&gt;&gt;</panel_attributes>
+    <additional_attributes>115.0;15.0;15.0;63.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>1162</y>
+      <w>130</w>
+      <h>95</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+&lt;&lt;extend&gt;&gt;</panel_attributes>
+    <additional_attributes>115.0;80.0;15.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>287</y>
+      <w>630</w>
+      <h>533</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;615.0;518.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>412</y>
+      <w>630</w>
+      <h>408</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;615.0;393.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>537</y>
+      <w>630</w>
+      <h>283</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;615.0;268.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>662</y>
+      <w>630</w>
+      <h>158</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;615.0;143.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>707</y>
+      <w>630</w>
+      <h>113</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;15.0;615.0;98.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>790</y>
+      <w>630</w>
+      <h>152</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;137.0;615.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1115</x>
+      <y>790</y>
+      <w>630</w>
+      <h>277</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;262.0;615.0;15.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1465</x>
+      <y>790</y>
+      <w>280</w>
+      <h>467</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>15.0;452.0;265.0;15.0</additional_attributes>
+  </element>
+</diagram>

@@ -1,0 +1,916 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="15.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>20</x>
+      <y>20</y>
+      <w>3030</w>
+      <h>2200</h>
+    </coordinates>
+    <panel_attributes>Core Application
+--</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>20</x>
+      <y>2330</y>
+      <w>3030</w>
+      <h>850</h>
+    </coordinates>
+    <panel_attributes>AI / Agent Components
+--</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>80</x>
+      <y>110</y>
+      <w>350</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>User
+--
+-userId: UUID
+-name: String
+-email: String
+--
++createCourse()
++viewCourses()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>620</x>
+      <y>110</y>
+      <w>430</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>StudyProfile
+--
+-availableStudyTime: int
+-studyPreferences: String
+-studyHabits: String
+--
++updateAvailability()
++updatePreferences()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1220</x>
+      <y>110</y>
+      <w>410</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;ConcreteObserver&gt;&gt;
+Calendar
+--
+-events: List
+--
++addEvent()
++removeEvent()
++viewEvents()
++update()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1830</x>
+      <y>110</y>
+      <w>460</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;interface&gt;&gt;
+ScheduleObserver
+--
++update()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2470</x>
+      <y>110</y>
+      <w>500</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;interface&gt;&gt;
+ScheduleSubject
+--
++attach(observer: ScheduleObserver)
++detach(observer: ScheduleObserver)
++notifyObservers()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>80</x>
+      <y>500</y>
+      <w>410</w>
+      <h>250</h>
+    </coordinates>
+    <panel_attributes>Course
+--
+-courseId: UUID
+-name: String
+-description: String
+-startDate: Date
+-endDate: Date
+--
++addMaterial()
++generateStudyResource()
++askQuestion()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>650</x>
+      <y>500</y>
+      <w>400</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>LearningMaterial
+--
+-materialId: UUID
+-fileName: String
+-fileType: String
+-uploadDate: Date
+--
++getContent()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1220</x>
+      <y>500</y>
+      <w>450</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>CourseChat
+--
++askQuestion(question: String): String
++viewHistory()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1820</x>
+      <y>500</y>
+      <w>580</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Context&gt;&gt;
+QuizGradingService
+--
+-strategy: GradingStrategy
+--
++setStrategy(strategy: GradingStrategy)
++gradeQuiz(quiz: Quiz): GradeResult</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2530</x>
+      <y>500</y>
+      <w>440</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;interface&gt;&gt;
+GradingStrategy
+--
++grade(quiz: Quiz): GradeResult</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>80</x>
+      <y>980</y>
+      <w>410</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>/StudyResource/
+--
+-resourceId: UUID
+-createdAt: DateTime
+--
++view()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>660</x>
+      <y>980</y>
+      <w>540</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Factory&gt;&gt;
+StudyResourceFactory
+--
++createResource(type: String): StudyResource</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1820</x>
+      <y>970</y>
+      <w>440</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>GradeResult
+--
+-score: double
+-feedback: String
+-weakAreas: List</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2480</x>
+      <y>900</y>
+      <w>530</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;ConcreteStrategy&gt;&gt;
+DeterministicGradingStrategy
+--
++grade(quiz: Quiz): GradeResult</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2480</x>
+      <y>1140</y>
+      <w>530</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;ConcreteStrategy&gt;&gt;
+AIGradingStrategy
+--
++grade(quiz: Quiz): GradeResult</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>80</x>
+      <y>1510</y>
+      <w>390</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Summary
+--
+-summaryText: String</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>600</x>
+      <y>1510</y>
+      <w>410</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>ConceptSet
+--
+-concepts: List</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1140</x>
+      <y>1510</y>
+      <w>470</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>StudyPlan
+--
+-startDate: Date
+-endDate: Date
+-priorityTopics: List
+--
++getSessions()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1790</x>
+      <y>1510</y>
+      <w>430</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>FlashcardDeck
+--
+-cardLimit: int
+-cards: List
+--
++viewCards()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2470</x>
+      <y>1510</y>
+      <w>430</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>Quiz
+--
+-difficulty: String
+-questionCount: int
+-topics: List
+--
++startQuiz()
++submitQuiz()</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1160</x>
+      <y>1860</y>
+      <w>480</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>StudySession
+--
+-topic: String
+-startTime: DateTime
+-duration: int
+-activityType: String</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>80</x>
+      <y>2470</y>
+      <w>610</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Facade&gt;&gt;
+StudyAssistantFacade
+--
++summarize(material: LearningMaterial): Summary
++extractConcepts(material: LearningMaterial): ConceptSet
++answerQuestion(course: Course, question: String): String
++generateStudyPlan(course: Course, profile: StudyProfile, calendar: Calendar): StudyPlan
++generateFlashcards(course: Course): FlashcardDeck
++generateQuiz(course: Course): Quiz</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>820</x>
+      <y>2470</y>
+      <w>560</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;agent&gt;&gt;
+ContentAgent
+--
++summarize(material: LearningMaterial): Summary
++extractConcepts(material: LearningMaterial): ConceptSet
++answerQuestion(course: Course, question: String): String</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1510</x>
+      <y>2470</y>
+      <w>620</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;agent&gt;&gt;
+PlanningAgent
+--
++generateStudyPlan(course: Course, profile: StudyProfile, calendar: Calendar): StudyPlan</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2270</x>
+      <y>2470</y>
+      <w>590</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;agent&gt;&gt;
+AssessmentAgent
+--
++generateFlashcards(course: Course): FlashcardDeck
++generateQuiz(course: Course): Quiz</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1540</x>
+      <y>2910</y>
+      <w>560</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Singleton&gt;&gt;
+AIEngine
+--
+-{static} instance: AIEngine
+-AIEngine()
+--
++{static} getInstance(): AIEngine
++generate(context: String, request: String): String</panel_attributes>
+    <additional_attributes />
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>255</x>
+      <y>1110</y>
+      <w>50</w>
+      <h>420</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>30.0;20.0;20.0;400.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>1035</y>
+      <w>150</w>
+      <h>550</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>20.0;20.0;130.0;530.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>1035</y>
+      <w>690</w>
+      <h>590</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>20.0;20.0;670.0;570.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>1035</y>
+      <w>1340</w>
+      <h>575</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>20.0;20.0;1320.0;555.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>1035</y>
+      <w>2020</w>
+      <h>595</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>20.0;20.0;2000.0;575.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>165</y>
+      <w>2020</w>
+      <h>480</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>2000.0;20.0;20.0;460.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1590</x>
+      <y>165</y>
+      <w>900</w>
+      <h>1460</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>880.0;20.0;20.0;1440.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2665</x>
+      <y>240</y>
+      <w>75</w>
+      <h>1290</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>55.0;20.0;20.0;1270.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1610</x>
+      <y>150</y>
+      <w>240</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>220.0;20.0;20.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2725</x>
+      <y>590</y>
+      <w>45</w>
+      <h>330</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>25.0;20.0;20.0;310.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2725</x>
+      <y>590</y>
+      <w>45</w>
+      <h>570</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>25.0;20.0;20.0;550.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>235</x>
+      <y>270</y>
+      <w>70</w>
+      <h>250</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+m1=1
+m2=0..*
+owns</panel_attributes>
+    <additional_attributes>20.0;20.0;50.0;230.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>410</x>
+      <y>180</y>
+      <w>230</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1
+has</panel_attributes>
+    <additional_attributes>20.0;20.0;210.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>410</x>
+      <y>180</y>
+      <w>830</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1
+has</panel_attributes>
+    <additional_attributes>20.0;20.0;810.0;30.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>575</y>
+      <w>200</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=0..*
+materials</panel_attributes>
+    <additional_attributes>20.0;50.0;180.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>265</x>
+      <y>730</y>
+      <w>40</w>
+      <h>270</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=0..*
+generated resources</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;250.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>545</y>
+      <w>770</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1
+chat</panel_attributes>
+    <additional_attributes>20.0;80.0;750.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1355</x>
+      <y>1680</y>
+      <w>65</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1..*
+sessions</panel_attributes>
+    <additional_attributes>20.0;20.0;45.0;180.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>450</x>
+      <y>1015</y>
+      <w>230</w>
+      <h>570</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+creates</panel_attributes>
+    <additional_attributes>210.0;20.0;20.0;550.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>785</x>
+      <y>1070</y>
+      <w>165</w>
+      <h>460</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+creates</panel_attributes>
+    <additional_attributes>145.0;20.0;20.0;440.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>910</x>
+      <y>1070</y>
+      <w>485</w>
+      <h>460</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+creates</panel_attributes>
+    <additional_attributes>20.0;20.0;465.0;440.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1180</x>
+      <y>1015</y>
+      <w>630</w>
+      <h>595</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+creates</panel_attributes>
+    <additional_attributes>20.0;20.0;610.0;575.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1180</x>
+      <y>1015</y>
+      <w>1310</w>
+      <h>615</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+creates</panel_attributes>
+    <additional_attributes>20.0;20.0;1290.0;595.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>1015</y>
+      <w>210</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+returns</panel_attributes>
+    <additional_attributes>190.0;20.0;20.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2380</x>
+      <y>535</y>
+      <w>170</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+uses</panel_attributes>
+    <additional_attributes>20.0;50.0;150.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2020</x>
+      <y>650</y>
+      <w>110</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+produces</panel_attributes>
+    <additional_attributes>90.0;20.0;20.0;320.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2090</x>
+      <y>650</y>
+      <w>615</w>
+      <h>880</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+submitted to</panel_attributes>
+    <additional_attributes>595.0;860.0;20.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2240</x>
+      <y>1020</y>
+      <w>250</w>
+      <h>610</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+receives</panel_attributes>
+    <additional_attributes>230.0;590.0;20.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2270</x>
+      <y>150</y>
+      <w>220</w>
+      <h>55</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+notifies</panel_attributes>
+    <additional_attributes>200.0;35.0;20.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>2530</y>
+      <w>170</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+delegates</panel_attributes>
+    <additional_attributes>20.0;45.0;150.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>2525</y>
+      <w>860</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+delegates</panel_attributes>
+    <additional_attributes>20.0;50.0;840.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>670</x>
+      <y>2535</y>
+      <w>1620</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+delegates</panel_attributes>
+    <additional_attributes>20.0;40.0;1600.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1360</x>
+      <y>2530</y>
+      <w>200</w>
+      <h>490</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+uses</panel_attributes>
+    <additional_attributes>20.0;20.0;180.0;470.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1800</x>
+      <y>2600</y>
+      <w>40</w>
+      <h>330</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+uses</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;310.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2080</x>
+      <y>2535</y>
+      <w>210</w>
+      <h>485</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+uses</panel_attributes>
+    <additional_attributes>190.0;20.0;20.0;465.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>265</x>
+      <y>730</y>
+      <w>140</w>
+      <h>1760</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+requests AI features</panel_attributes>
+    <additional_attributes>20.0;20.0;120.0;1740.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>365</x>
+      <y>610</y>
+      <w>1100</w>
+      <h>1880</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+asks questions</panel_attributes>
+    <additional_attributes>1080.0;20.0;20.0;1860.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>365</x>
+      <y>1070</y>
+      <w>585</w>
+      <h>1420</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+uses</panel_attributes>
+    <additional_attributes>20.0;1400.0;565.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1800</x>
+      <y>1230</y>
+      <w>965</w>
+      <h>1700</h>
+    </coordinates>
+    <panel_attributes>lt=.&gt;
+uses AI</panel_attributes>
+    <additional_attributes>945.0;20.0;20.0;1680.0</additional_attributes>
+  </element>
+</diagram>
