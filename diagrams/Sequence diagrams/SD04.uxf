@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
+      <w>2350</w>
+      <h>2285</h>
+    </coordinates>
+    <panel_attributes>title=SD04 - Generate Flashcards and Quiz
+autoTick=true
+obj=Student / User~Student ACTOR
+obj=«boundary»\nStudyAssistantUI~UI
+obj=Course~Course
+obj=«control»\nStudyAssistantFacade~Facade
+obj=«control»\nAssessmentAgent~Agent
+obj=«control»\nAIEngine~Engine
+obj=External AI Service\n(LLM / AI API)~ExternalAI
+obj=StudyResourceFactory~Factory
+obj=FlashcardDeck~Deck CREATED_LATER
+obj=Quiz~Quiz CREATED_LATER
+
+combinedFragment=alt~frag1 Student Quiz; Student:[Generate Flashcards]
+Student-&gt;UI : requestFlashcards()
+UI-&gt;Course : generateStudyResource()
+Course-&gt;Facade : generateFlashcards(course)
+on=Facade
+Facade-&gt;Agent : generateFlashcards(course)
+on=Agent
+Agent-&gt;Engine : generate(courseContext,\nflashcardRequest)
+on=Engine
+Engine-&gt;ExternalAI : generate flashcard content
+on=ExternalAI
+ExternalAI.&gt;Engine : flashcard content
+off=ExternalAI
+Engine.&gt;Agent : generated content
+off=Engine
+Agent.&gt;Facade : flashcardData
+Facade-&gt;Factory : createResource("FlashcardDeck")
+Factory-&gt;Deck : &lt;&lt;create&gt;&gt;
+Factory.&gt;Facade : FlashcardDeck
+Facade.&gt;Course : FlashcardDeck
+Course.&gt;UI : FlashcardDeck
+UI-&gt;Deck : viewCards()
+Deck.&gt;UI : cards
+UI.&gt;Student : displayFlashcards()
+off=Agent
+off=Facade
+..=frag1; Student:[Generate Quiz]
+Student-&gt;UI : requestQuiz(difficulty,\nquestionCount, topics)
+UI-&gt;Course : generateStudyResource()
+Course-&gt;Facade : generateQuiz(course)
+on=Facade
+Facade-&gt;Agent : generateQuiz(course)
+on=Agent
+Agent-&gt;Engine : generate(courseContext,\nquizRequest)
+on=Engine
+Engine-&gt;ExternalAI : generate quiz content
+on=ExternalAI
+combinedFragment=alt~frag2 Student Quiz; Student:[Valid AI response]
+ExternalAI.&gt;Engine : quiz questions
+Engine.&gt;Agent : quizData
+Agent.&gt;Facade : quizData
+Facade-&gt;Factory : createResource("Quiz")
+Factory-&gt;Quiz : &lt;&lt;create&gt;&gt;
+Factory.&gt;Facade : Quiz
+Facade.&gt;Course : Quiz
+Course.&gt;UI : Quiz
+UI.&gt;Student : displayGeneratedQuiz()
+..=frag2; Student:[Invalid / incomplete AI response]
+ExternalAI.&gt;Engine : invalid response
+Engine.&gt;Agent : generationError
+Agent.&gt;Facade : generationFailed
+Facade.&gt;Course : error
+Course.&gt;UI : error
+UI.&gt;Student : displayQuizGenerationError()
+--=frag2
+off=ExternalAI
+off=Engine
+off=Agent
+off=Facade
+--=frag1
+</panel_attributes>
+    <additional_attributes />
+  </element>
+</diagram>
