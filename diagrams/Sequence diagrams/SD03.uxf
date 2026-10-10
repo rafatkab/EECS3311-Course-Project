@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
+      <w>2820</w>
+      <h>1760</h>
+    </coordinates>
+    <panel_attributes>title=SD03 - Generate Personalized Study Plan
+autoTick=true
+obj=Student / User~Student ACTOR
+obj=«boundary»\nStudyAssistantUI~UI
+obj=Course~Course
+obj=StudyProfile~Profile
+obj=Calendar~Calendar
+obj=«control»\nStudyAssistantFacade~Facade
+obj=«control»\nPlanningAgent~PlanningAgent
+obj=«control»\nAIEngine~Engine
+obj=External AI Service\n(LLM / AI API)~ExternalAI
+obj=StudyResourceFactory~Factory
+obj=StudyPlan~Plan CREATED_LATER
+obj=StudySession~Session CREATED_LATER
+
+Student-&gt;UI : requestStudyPlan()
+UI-&gt;Course : generateStudyResource()
+Course-&gt;Facade : generateStudyPlan(course,\nprofile, calendar)
+on=Facade
+Facade-&gt;PlanningAgent : generateStudyPlan(course,\nprofile, calendar)
+on=PlanningAgent
+PlanningAgent-&gt;Profile : read availableStudyTime,\nstudyPreferences, studyHabits
+Profile.&gt;PlanningAgent : profileData
+PlanningAgent-&gt;Calendar : viewEvents()
+Calendar.&gt;PlanningAgent : existingEvents
+PlanningAgent-&gt;Engine : generate(context, request)
+on=Engine
+Engine-&gt;ExternalAI : request study recommendations
+on=ExternalAI
+combinedFragment=alt~frag1 Student Session; Student:[AI service available]
+ExternalAI.&gt;Engine : recommended schedule/topics
+off=ExternalAI
+Engine.&gt;PlanningAgent : recommendations
+off=Engine
+PlanningAgent.&gt;Facade : studyPlanData
+Facade-&gt;Factory : createResource("StudyPlan")
+Factory-&gt;Plan : &lt;&lt;create&gt;&gt;
+Factory.&gt;Facade : Plan
+combinedFragment=loop [For each recommended study session]~frag2 Student Session
+Plan-&gt;Session : &lt;&lt;create&gt;&gt;(topic, startTime,\nduration, activityType)
+--=frag2
+Facade.&gt;Course : StudyPlan
+Student:== Synchronize Study Sessions ==
+combinedFragment=loop [For each StudySession]~frag3 Student Session
+Plan-&gt;Calendar : addEvent()
+Calendar.&gt;Plan : eventAdded
+--=frag3
+Calendar-&gt;Calendar : update()
+Facade.&gt;UI : StudyPlan
+UI.&gt;Student : displayStudyPlan()
+..=frag1; Student:[AI generation fails]
+ExternalAI.&gt;Engine : timeout / service error
+Engine.&gt;PlanningAgent : failure
+PlanningAgent.&gt;Facade : generationFailed
+Facade.&gt;Course : error
+Course.&gt;UI : error
+UI.&gt;Student : displayPlanGenerationError()
+--=frag1
+off=PlanningAgent
+off=Facade
+</panel_attributes>
+    <additional_attributes />
+  </element>
+</diagram>

@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
+      <w>1200</w>
+      <h>1410</h>
+    </coordinates>
+    <panel_attributes>title=SD06 - View and Manage Calendar
+autoTick=true
+obj=Student / User~Student ACTOR
+obj=«boundary»\nStudyAssistantUI~UI
+obj=Calendar~Calendar
+
+combinedFragment=alt~frag1 Student Calendar; Student:[View Calendar]
+Student-&gt;UI : requestCalendar()
+UI-&gt;Calendar : viewEvents()
+on=Calendar
+Calendar.&gt;UI : events
+off=Calendar
+UI.&gt;Student : displayCalendar(events)
+..=frag1; Student:[Add Calendar Event]
+Student-&gt;UI : enterEventDetails()
+UI-&gt;Calendar : addEvent()
+on=Calendar
+combinedFragment=alt~frag2 Student Calendar; Student:[Event details are valid]
+Calendar-&gt;Calendar : validate event
+Calendar-&gt;Calendar : store event
+Calendar.&gt;UI : eventAdded
+UI.&gt;Student : displayEventCreated()
+..=frag2; Student:[Invalid / conflicting event]
+Calendar.&gt;UI : validationError
+UI.&gt;Student : displayValidationError()
+--=frag2
+off=Calendar
+..=frag1; Student:[Remove Calendar Event]
+Student-&gt;UI : selectEventToRemove()
+UI-&gt;Calendar : removeEvent()
+on=Calendar
+combinedFragment=alt~frag3 Student Calendar; Student:[Event exists]
+Calendar-&gt;Calendar : remove stored event
+Calendar.&gt;UI : eventRemoved
+UI.&gt;Student : displayEventRemoved()
+..=frag3; Student:[Event not found]
+Calendar.&gt;UI : eventNotFound
+UI.&gt;Student : displayError()
+--=frag3
+off=Calendar
+--=frag1
+</panel_attributes>
+    <additional_attributes />
+  </element>
+</diagram>

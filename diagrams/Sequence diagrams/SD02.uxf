@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
+      <w>2820</w>
+      <h>3090</h>
+    </coordinates>
+    <panel_attributes>title=SD02 - AI Content Assistance
+autoTick=true
+obj=Student / User~Student ACTOR
+obj=«boundary»\nStudyAssistantUI~UI
+obj=Course~Course
+obj=LearningMaterial~Material
+obj=CourseChat~Chat
+obj=«control»\nStudyAssistantFacade~Facade
+obj=«control»\nContentAgent~Agent
+obj=«control»\nAIEngine~Engine
+obj=External AI Service\n(LLM / AI API)~ExternalAI
+obj=Summary~Summary CREATED_LATER
+obj=ConceptSet~ConceptSet CREATED_LATER
+obj=StudyResourceFactory~Factory
+
+combinedFragment=alt~frag1 Student Factory; Student:[Generate Document Summary]
+Student-&gt;UI : requestSummary(material)
+UI-&gt;Course : generateStudyResource()
+Course-&gt;Facade : summarize(material)
+on=Facade
+Facade-&gt;Agent : summarize(material)
+on=Agent
+Agent-&gt;Material : getContent()
+Material.&gt;Agent : content
+Agent-&gt;Engine : generate(context, request)
+on=Engine
+Engine-&gt;ExternalAI : generate summary
+on=ExternalAI
+ExternalAI.&gt;Engine : generated summary
+off=ExternalAI
+Engine.&gt;Agent : AI response
+off=Engine
+Agent.&gt;Facade : Summary data
+Facade-&gt;Factory : createResource("Summary")
+Factory-&gt;Summary : &lt;&lt;create&gt;&gt;
+Factory.&gt;Facade : Summary
+Facade.&gt;Course : Summary
+off=Agent
+off=Facade
+Course.&gt;UI : Summary
+UI.&gt;Student : displaySummary()
+..=frag1; Student:[Extract Important Concepts]
+Student-&gt;UI : requestConceptExtraction(material)
+UI-&gt;Course : generateStudyResource()
+Course-&gt;Facade : extractConcepts(material)
+on=Facade
+Facade-&gt;Agent : extractConcepts(material)
+on=Agent
+Agent-&gt;Material : getContent()
+Material.&gt;Agent : content
+Agent-&gt;Engine : generate(context, request)
+on=Engine
+Engine-&gt;ExternalAI : extract important concepts
+ExternalAI.&gt;Engine : concepts
+Engine.&gt;Agent : AI response
+off=Engine
+Agent.&gt;Facade : ConceptSet data
+Facade-&gt;Factory : createResource("ConceptSet")
+Factory-&gt;ConceptSet : &lt;&lt;create&gt;&gt;
+Factory.&gt;Facade : ConceptSet
+Facade.&gt;Course : ConceptSet
+off=Agent
+off=Facade
+Course.&gt;UI : ConceptSet
+UI.&gt;Student : displayConcepts()
+..=frag1; Student:[Ask Course Question]
+Student-&gt;UI : enterQuestion(question)
+UI-&gt;Chat : askQuestion(question)
+on=Chat
+Chat-&gt;Facade : answerQuestion(course, question)
+on=Facade
+Facade-&gt;Agent : answerQuestion(course, question)
+on=Agent
+Agent-&gt;Engine : generate(courseContext, question)
+on=Engine
+Engine-&gt;ExternalAI : send contextual question
+on=ExternalAI
+combinedFragment=alt~frag2 Student Factory; Student:[AI service available]
+ExternalAI.&gt;Engine : generated answer
+Engine.&gt;Agent : answer
+Agent.&gt;Facade : answer
+Facade.&gt;Chat : answer
+Chat.&gt;UI : answer
+UI.&gt;Student : displayAnswer(answer)
+..=frag2; Student:[AI service failure]
+ExternalAI.&gt;Engine : error / timeout
+Engine.&gt;Agent : failure
+Agent.&gt;Facade : error
+Facade.&gt;Chat : unableToGenerateAnswer
+Chat.&gt;UI : error
+UI.&gt;Student : displayAIError()
+--=frag2
+off=ExternalAI
+off=Engine
+off=Agent
+off=Facade
+off=Chat
+--=frag1
+</panel_attributes>
+    <additional_attributes />
+  </element>
+</diagram>

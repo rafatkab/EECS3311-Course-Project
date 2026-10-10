@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLSequenceAllInOne</id>
+    <coordinates>
+      <x>40</x>
+      <y>40</y>
+      <w>2115</w>
+      <h>1760</h>
+    </coordinates>
+    <panel_attributes>title=SD05 - Submit and Grade Quiz
+autoTick=true
+obj=Student / User~Student ACTOR
+obj=«boundary»\nStudyAssistantUI~UI
+obj=Quiz~Quiz
+obj=«control»\nQuizGradingService~GradingService
+obj=DeterministicGradingStrategy~Deterministic
+obj=AIGradingStrategy~AIStrategy
+obj=AIEngine~Engine
+obj=External AI Service\n(LLM / AI API)~ExternalAI
+obj=GradeResult~Result CREATED_LATER
+
+Student-&gt;UI : startQuiz()
+UI-&gt;Quiz : startQuiz()
+Quiz.&gt;UI : questions
+UI.&gt;Student : displayQuestions()
+Student-&gt;UI : submitAnswers(answers)
+UI-&gt;Quiz : submitQuiz()
+on=Quiz
+Quiz-&gt;GradingService : gradeQuiz(quiz)
+on=GradingService
+combinedFragment=alt~frag1 Student Result; Student:[Objective questions]
+GradingService-&gt;GradingService : setStrategy(DeterministicGradingStrategy)
+GradingService-&gt;Deterministic : grade(quiz)
+on=Deterministic
+Deterministic.&gt;GradingService : GradeResult data
+off=Deterministic
+..=frag1; Student:[Complex / open-ended responses]
+GradingService-&gt;GradingService : setStrategy(AIGradingStrategy)
+GradingService-&gt;AIStrategy : grade(quiz)
+on=AIStrategy
+AIStrategy-&gt;Engine : generate(context,\ngradingRequest)
+on=Engine
+Engine-&gt;ExternalAI : evaluate response
+on=ExternalAI
+combinedFragment=alt~frag2 Student Result; Student:[AI grading succeeds]
+ExternalAI.&gt;Engine : score + feedback + weak areas
+Engine.&gt;AIStrategy : gradingResponse
+AIStrategy.&gt;GradingService : GradeResult data
+..=frag2; Student:[AI service unavailable]
+ExternalAI.&gt;Engine : timeout / error
+Engine.&gt;AIStrategy : error
+AIStrategy.&gt;GradingService : gradingFailed
+GradingService.&gt;Quiz : gradingError
+Quiz.&gt;UI : gradingUnavailable
+UI.&gt;Student : displayGradingError()
+--=frag2
+off=ExternalAI
+off=Engine
+off=AIStrategy
+--=frag1
+GradingService-&gt;Result : &lt;&lt;create&gt;&gt;(score, feedback,\nweakAreas)
+GradingService.&gt;Quiz : GradeResult
+off=GradingService
+Quiz.&gt;UI : GradeResult
+off=Quiz
+UI.&gt;Student : displayScoreFeedbackAndWeakAreas()
+</panel_attributes>
+    <additional_attributes />
+  </element>
+</diagram>
