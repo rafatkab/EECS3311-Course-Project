@@ -1,0 +1,7 @@
+EECS 3311 - Learning material upload example
+
+The Repository pattern separates application logic from storage details.
+CourseService depends on CourseRepository rather than containing SQL.
+JdbcCourseRepository implements that interface using prepared SQL statements.
+
+This sample contains no credentials or personal information.

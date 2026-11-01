@@ -1,6 +1,7 @@
 # Stage 2 — F01 implemented diagrams
 
-These diagrams supplement the original UML/SD01. F02's upload branch is not yet implemented.
+These diagrams cover F01. The implemented F02 upload branch is documented in
+[stage2-f02.md](stage2-f02.md); both supplement the original UML/SD01.
 
 ```mermaid
 classDiagram

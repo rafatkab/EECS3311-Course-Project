@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,6 +21,17 @@ import java.util.Map;
 public class ApiExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
     public record ApiError(String message, Map<String, String> fields) { }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> tooLarge(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ApiError("Each file must be 10 MiB or smaller; select at most 10 files.", Map.of()));
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    ResponseEntity<ApiError> missingFiles(Exception exception) {
+        return ResponseEntity.badRequest().body(new ApiError("Select at least one file in the files field.", Map.of()));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> fields(MethodArgumentNotValidException exception) {
@@ -45,6 +59,6 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiError> storage(DataAccessException exception) {
         LOG.error("Course storage operation failed", exception);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(new ApiError("Courses could not be saved or loaded. Please try again.", Map.of()));
+                .body(new ApiError("Data could not be saved or loaded. Please try again.", Map.of()));
     }
 }

@@ -21,6 +21,22 @@ body { margin: 0; }
 .course-toolbar span { color: #627169; font-size: .85rem; }
 .course-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }
 .course-card { border: 1px solid #dfe6dc; border-radius: 16px; background: white; padding: 26px; border-top: 4px solid #739780; overflow-wrap: anywhere; }
+.course-card[role="button"] { cursor: pointer; }
+.course-card[role="button"]:hover { border-color: #739780; box-shadow: 0 4px 18px #25382f12; }
+.course-card[role="button"]:focus-visible { outline: 3px solid #32634f; outline-offset: 3px; }
+.materials-workspace { margin: 28px auto 50px; gap: 14px; }
+.materials-workspace h1 { margin: 8px 0; overflow-wrap: anywhere; }
+.materials-workspace > p { margin: 0; }
+.upload-panel { box-sizing: border-box; width: 100%; background: white; border: 1px solid #dfe6dc; border-radius: 16px; padding: 24px; margin: 16px 0; }
+.upload-panel h2 { margin-top: 0; font-size: 1.3rem; }
+.upload-panel p, .material-row p { color: #627169; font-size: .9rem; }
+.material-list { width: 100%; display: grid; gap: 14px; }
+.material-row { border: 1px solid #dfe6dc; border-radius: 12px; padding: 18px 24px; background: white; overflow-wrap: anywhere; }
+.material-row h3 { margin: 0 0 8px; }
+.material-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.material-actions a { color: var(--lumo-primary-text-color); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.material-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 60vh; overflow: auto; font: .95rem/1.6 var(--lumo-font-family); }
+.upload-result { color: #32634f; }
 .course-card h3 { margin: 12px 0; font-size: 1.25rem; }
 .course-description { white-space: pre-wrap; color: #627169; }
 .course-dates { font-size: .8rem; border-top: 1px solid #e6ebe3; padding-top: 18px; margin-top: 24px; }

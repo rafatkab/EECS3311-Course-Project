@@ -8,6 +8,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
 
 /** Java 17 source-file CLI: uses the same authenticated REST API as the GUI. */
 public class StudyPlannerCli {
@@ -24,11 +28,22 @@ public class StudyPlannerCli {
         if (args.length == 0 || args[0].equals("help")) {
             System.out.println("Usage: java cli/StudyPlannerCli.java list");
             System.out.println("       java cli/StudyPlannerCli.java create \"NAME\" \"DESCRIPTION\" YYYY-MM-DD YYYY-MM-DD");
+            System.out.println("       java cli/StudyPlannerCli.java materials COURSE_ID");
+            System.out.println("       java cli/StudyPlannerCli.java upload COURSE_ID FILE [FILE ...] (up to 10)");
+            System.out.println("       java cli/StudyPlannerCli.java content COURSE_ID MATERIAL_ID");
             System.out.println("Set STUDY_USERNAME (default student), STUDY_PASSWORD, and optionally BACKEND_URL.");
             System.out.println("If STUDY_PASSWORD is unset, an interactive console securely prompts for it.");
             return;
         }
-        if (!(args[0].equals("list") && args.length == 1) && !(args[0].equals("create") && args.length == 5)) {
+        boolean valid = switch (args[0]) {
+            case "list" -> args.length == 1;
+            case "create" -> args.length == 5;
+            case "materials" -> args.length == 2;
+            case "upload" -> args.length >= 3 && args.length <= 12;
+            case "content" -> args.length == 3;
+            default -> false;
+        };
+        if (!valid) {
             throw new IllegalArgumentException("Invalid arguments. Run with help for usage.");
         }
         String username = System.getenv().getOrDefault("STUDY_USERNAME", "student");
@@ -46,14 +61,41 @@ public class StudyPlannerCli {
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3))
                 .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)).build();
         HttpRequest.Builder request = request(base + "/api/courses", authorization);
-        if (args[0].equals("create")) {
+        if (java.util.Set.of("materials", "upload", "content").contains(args[0])) {
+            String courseId = UUID.fromString(args[1]).toString();
+            String url = base + "/api/courses/" + courseId + "/materials";
+            if (args[0].equals("content")) url += "/" + UUID.fromString(args[2]) + "/content";
+            request = request(url, authorization);
+            if (args[0].equals("content")) request.setHeader("Accept", "text/plain, application/json");
+        }
+        if (args[0].equals("create") || args[0].equals("upload")) {
             var tokenResponse = client.send(request(base + "/api/csrf", authorization).GET().build(), HttpResponse.BodyHandlers.ofString());
             check(tokenResponse);
             String token = tokenResponse.headers().firstValue("X-CSRF-TOKEN").orElseThrow();
-            String body = "{\"name\":" + json(args[1]) + ",\"description\":" + json(args[2])
+            if (args[0].equals("create")) {
+                String body = "{\"name\":" + json(args[1]) + ",\"description\":" + json(args[2])
                     + ",\"startDate\":" + json(args[3]) + ",\"endDate\":" + json(args[4]) + "}";
-            request.header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body));
+                request.header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(body));
+            } else {
+                String boundary = "StudyPlanner" + UUID.randomUUID().toString().replace("-", "");
+                ByteArrayOutputStream body = new ByteArrayOutputStream();
+                for (int index = 2; index < args.length; index++) {
+                    Path path = Path.of(args[index]);
+                    String name = path.getFileName().toString().replace('"', '_').replace('\r', '_').replace('\n', '_');
+                    byte[] bytes;
+                    try (var stream = Files.newInputStream(path)) { bytes = stream.readNBytes(10 * 1024 * 1024 + 1); }
+                    if (bytes.length > 10 * 1024 * 1024) throw new IllegalArgumentException("Each file must be 10 MiB or smaller.");
+                    body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"files\"; filename=\"" + name
+                            + "\"\r\nContent-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                    body.write(bytes);
+                    body.write("\r\n".getBytes(StandardCharsets.UTF_8));
+                }
+                body.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+                request.timeout(Duration.ofSeconds(60)).header("X-CSRF-TOKEN", token)
+                        .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
+            }
         }
         var response = client.send(request.build(), HttpResponse.BodyHandlers.ofString());
         check(response);

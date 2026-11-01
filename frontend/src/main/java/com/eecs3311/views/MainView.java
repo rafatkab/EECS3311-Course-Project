@@ -26,6 +26,8 @@ import java.util.List;
 public class MainView extends VerticalLayout {
     private final CourseApiFactory apiFactory;
     private CourseApi api;
+    private String signedInUsername;
+    private List<Course> displayedCourses = List.of();
     private final Div courseList = new Div();
     private final Paragraph status = new Paragraph();
     private final Span count = new Span();
@@ -58,6 +60,7 @@ public class MainView extends VerticalLayout {
                 CourseApi connection = apiFactory.connect(username.getValue().strip(), password.getValue());
                 List<Course> courses = connection.viewCourses();
                 api = connection;
+                signedInUsername = username.getValue().strip();
                 password.clear();
                 showDashboard(username.getValue().strip(), courses);
             } catch (CourseApi.ApiFailure failure) {
@@ -124,6 +127,7 @@ public class MainView extends VerticalLayout {
     }
 
     private void renderCourses(List<Course> courses) {
+        displayedCourses = List.copyOf(courses);
         count.setText(courses.size() + (courses.size() == 1 ? " course" : " courses"));
         courseList.removeAll();
         if (courses.isEmpty()) {
@@ -142,8 +146,22 @@ public class MainView extends VerticalLayout {
             dates.addClassName("course-dates");
             Div card = new Div(label, new H3(course.name()), description, dates);
             card.addClassName("course-card");
+            card.getElement().setAttribute("role", "button");
+            card.getElement().setAttribute("tabindex", "0");
+            card.getElement().setAttribute("aria-label", "Open course " + course.name());
+            card.addClickListener(event -> openCourse(course));
+            card.getElement().addEventListener("keydown", event -> openCourse(course))
+                    .setFilter("(event.key === 'Enter' || event.key === ' ') && (event.preventDefault(), true)");
             courseList.add(card);
         }
+    }
+
+    private void openCourse(Course course) {
+        removeAll();
+        add(new CourseMaterialsPanel(api, course, () -> {
+            showDashboard(signedInUsername, displayedCourses);
+            refreshCourses();
+        }));
     }
 
     private void openCourseForm() {

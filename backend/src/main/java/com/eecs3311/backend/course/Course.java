@@ -1,5 +1,7 @@
 package com.eecs3311.backend.course;
 
+import com.eecs3311.backend.material.LearningMaterial;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -7,6 +9,11 @@ import java.util.UUID;
 /** Immutable course owned by one student; dates are inclusive. */
 public record Course(UUID courseId, UUID ownerId, String name, String description,
                      LocalDate startDate, LocalDate endDate, Instant createdAt) {
+    /** Stage 1 F02: create a material belonging to this course. */
+    public LearningMaterial addMaterial(String fileName, String fileType, long sizeBytes, String text) {
+        return new LearningMaterial(UUID.randomUUID(), courseId, fileName, fileType, sizeBytes, Instant.now(), text);
+    }
+
     public Course {
         if (courseId == null || ownerId == null || createdAt == null) {
             throw new IllegalArgumentException("A course requires an identity and owner.");

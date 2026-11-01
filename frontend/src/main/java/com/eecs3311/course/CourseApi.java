@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
+import java.io.ByteArrayOutputStream;
 
 /** Real backend requests, with cookies and CSRF protection; no mock fallback data. */
 public class CourseApi {
@@ -35,9 +37,8 @@ public class CourseApi {
             throw new ApiFailure("The backend returned an unreadable response.");
         }
     }
-    public Course createCourse(CreateCourseRequest course) {
-        var token = send(request("/api/csrf").GET().build()).headers().firstValue("X-CSRF-TOKEN")
-                .orElseThrow(() -> new ApiFailure("Could not prepare a secure request. Sign in again."));
+    public synchronized Course createCourse(CreateCourseRequest course) {
+        var token = csrfToken();
         try {
             var response = send(request("/api/courses").header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(course))).build());
@@ -46,18 +47,70 @@ public class CourseApi {
             throw new ApiFailure("Unreadable response. Refresh your courses before retrying.");
         }
     }
+    private String csrfToken() {
+        return send(request("/api/csrf").GET().build()).headers().firstValue("X-CSRF-TOKEN")
+                .orElseThrow(() -> new ApiFailure("Could not prepare a secure request. Sign in again."));
+    }
+
+    public List<LearningMaterial> listMaterials(UUID courseId) {
+        try {
+            return mapper.readValue(send(request("/api/courses/" + courseId + "/materials").GET().build()).body(), new TypeReference<>() { });
+        } catch (IOException exception) {
+            throw new ApiFailure("The backend returned an unreadable material list.");
+        }
+    }
+
+    public String materialContent(UUID courseId, UUID materialId) {
+        return send(request("/api/courses/" + courseId + "/materials/" + materialId + "/content")
+                .setHeader("Accept", "text/plain, application/json").GET().build()).body();
+    }
+
+    public byte[] downloadMaterial(UUID courseId, UUID materialId) {
+        return send(request("/api/courses/" + courseId + "/materials/" + materialId + "/download")
+                .setHeader("Accept", "application/octet-stream, application/json").GET().build(),
+                HttpResponse.BodyHandlers.ofByteArray()).body();
+    }
+
+    // Keep token acquisition and POST together: concurrent first uploads must not
+    // create different sessions and overwrite each other's CSRF cookie.
+    public synchronized void uploadMaterial(UUID courseId, String filename, byte[] bytes) {
+        if (bytes.length > 10 * 1024 * 1024) throw new ApiFailure("Each file must be 10 MiB or smaller.");
+        String boundary = "StudyPlanner" + UUID.randomUUID().toString().replace("-", "");
+        String safeName = filename.replace('\\', '_').replace('"', '_').replace('\r', '_').replace('\n', '_');
+        try {
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"files\"; filename=\"" + safeName
+                    + "\"\r\nContent-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            body.write(bytes);
+            body.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+            send(request("/api/courses/" + courseId + "/materials").timeout(Duration.ofSeconds(45))
+                    .header("X-CSRF-TOKEN", csrfToken()).header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build());
+        } catch (IOException exception) {
+            throw new ApiFailure("Could not prepare the file for upload.");
+        }
+    }
     private HttpRequest.Builder request(String path) {
         return HttpRequest.newBuilder(URI.create(baseUrl + path)).timeout(Duration.ofSeconds(8))
                 .header("Authorization", authorization).header("Accept", "application/json");
     }
     private HttpResponse<String> send(HttpRequest request) {
+        return send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
         try {
-            var response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            var response = http.send(request, handler);
             int status = response.statusCode();
             if (status == 401) throw new ApiFailure("Username or password is incorrect. Sign in again.");
             if (status == 403) throw new ApiFailure("Your request could not be authorized. Sign in again.");
             if (status >= 400) {
-                if (status == 400) throw new ApiFailure(mapper.readTree(response.body()).path("message").asText("Check your course details."));
+                if (status == 400 || status == 404 || status == 413 || status == 415) {
+                    String body = response.body() instanceof byte[] bytes ? new String(bytes, StandardCharsets.UTF_8) : String.valueOf(response.body());
+                    var details = mapper.readTree(body);
+                    throw new ApiFailure(details == null ? "The file or course could not be processed."
+                            : details.path("message").asText("The file or course could not be processed."));
+                }
                 throw new ApiFailure("The backend could not complete the request. Try again shortly.");
             }
             return response;

@@ -1,5 +1,6 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
+param([switch] $IncludeF02)
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path $PSScriptRoot -Parent
 $javaPath = Join-Path $env:JAVA_HOME 'bin\java.exe'
@@ -51,6 +52,18 @@ try {
         Write-Output 'PASS: real CLI create and list.'
         node scripts/verify-f01-browser.mjs
         if ($LASTEXITCODE -ne 0) { throw 'Browser verification failed.' }
+        if ($IncludeF02) {
+            $courseIdentifier = ($created | ConvertFrom-Json).courseId
+            $notesPath = Join-Path $runPath 'cli-notes.txt'
+            [System.IO.File]::WriteAllText($notesPath, 'CLI lecture notes about Repository patterns.', [System.Text.UTF8Encoding]::new($false))
+            $uploaded = & $javaPath cli/StudyPlannerCli.java upload $courseIdentifier $notesPath
+            if ($LASTEXITCODE -ne 0 -or $uploaded -notmatch 'cli-notes.txt') { throw 'F02 CLI upload failed.' }
+            $materialIdentifier = ($uploaded | ConvertFrom-Json)[0].materialId
+            $extracted = & $javaPath cli/StudyPlannerCli.java content $courseIdentifier $materialIdentifier
+            if ($LASTEXITCODE -ne 0 -or $extracted -notmatch 'Repository patterns') { throw 'F02 CLI content retrieval failed.' }
+            node scripts/verify-f02-browser.mjs
+            if ($LASTEXITCODE -ne 0) { throw 'F02 browser verification failed.' }
+        }
         Stop-Process -Id $backendProcess.Id
         $backendProcess.WaitForExit()
         node scripts/verify-f01-browser.mjs --offline
@@ -60,6 +73,17 @@ try {
         $persisted = (& $javaPath cli/StudyPlannerCli.java list | Out-String) | ConvertFrom-Json
         if ($LASTEXITCODE -ne 0 -or $persisted.Count -ne 2) { throw 'File persistence restart check failed.' }
         Write-Output 'PASS: both GUI and CLI courses survived a real backend restart.'
+        if ($IncludeF02) {
+            $savedMaterials = (& $javaPath cli/StudyPlannerCli.java materials $courseIdentifier | Out-String) | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $savedMaterials.Count -ne 3) { throw 'Material restart persistence failed.' }
+            $savedContent = & $javaPath cli/StudyPlannerCli.java content $courseIdentifier $materialIdentifier
+            if ($LASTEXITCODE -ne 0 -or $savedContent -notmatch 'Repository patterns') { throw 'Extracted content restart persistence failed.' }
+            $authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:STUDY_USERNAME + ':' + $env:STUDY_PASSWORD))
+            $downloadPath = Join-Path $runPath 'restored-notes.txt'
+            Invoke-WebRequest -Uri "http://localhost:8091/api/courses/$courseIdentifier/materials/$materialIdentifier/download" -Headers @{Authorization=$authorization} -UseBasicParsing -OutFile $downloadPath
+            if ([System.IO.File]::ReadAllText($downloadPath) -ne 'CLI lecture notes about Repository patterns.') { throw 'Original file restart persistence failed.' }
+            Write-Output 'PASS: F02 CLI upload/list/content and metadata/text/original-byte persistence after backend restart.'
+        }
     } finally { Pop-Location }
 } finally {
     foreach ($ownedProcess in @($backendProcess, $frontendProcess)) {

@@ -28,7 +28,19 @@ F01 **Course Creation** is available in the frontend. Sign in with your locally
 configured backend credentials, then create courses with a name, description, start
 date, and end date. Courses are stored in the backend's local H2 database.
 
-## Command-line interface (F01)
+## Learning materials (F02)
+
+Open a course by clicking its card (or focus it and press Enter). Select **Upload
+learning materials** to choose one or more PDF, DOCX, or UTF-8 TXT files. Each file
+must be at most 10 MiB. Saved materials appear in that course; **View text** displays
+the extracted content; **Download original** saves the complete original file.
+**Back to courses** returns to the dashboard.
+
+Try `documentation/samples/f02-notes.txt`. Unsupported, empty, corrupt, encrypted,
+or text-free files show an error. Scans require OCR outside the app. Upload and text
+extraction are deterministic; AI resource generation is not implemented yet.
+
+## Command-line interface (F01 and F02)
 
 With the backend running, run from the repository root using Java 17+:
 
@@ -36,6 +48,9 @@ With the backend running, run from the repository root using Java 17+:
 java cli/StudyPlannerCli.java help
 java cli/StudyPlannerCli.java list
 java cli/StudyPlannerCli.java create "EECS 3311" "Software design" 2026-09-01 2026-12-20
+java cli/StudyPlannerCli.java materials COURSE_ID
+java cli/StudyPlannerCli.java upload COURSE_ID documentation/samples/f02-notes.txt
+java cli/StudyPlannerCli.java content COURSE_ID MATERIAL_ID
 ```
 
 The CLI prompts securely for the password in an interactive terminal. Set
@@ -59,7 +74,7 @@ cd backend
 ```
 
 The living [Stage 2 report (PDF)](documentation/reports/stage2-report.pdf) and its
-[editable source](documentation/reports/stage2-report.html) track F01,
+[editable source](documentation/reports/stage2-report.html) track F01–F02,
 remaining requirements, architecture changes, verification, and demonstration work.
 
 For optional end-to-end verification on Windows, build both packages above, then
@@ -68,6 +83,8 @@ run from the repository root with Node.js, Chrome, and `JAVA_HOME` configured:
 ```powershell
 npm.cmd install --prefix frontend/target/browser-tools --no-package-lock --no-audit --no-fund playwright-core
 .\scripts\verify-f01.ps1
+# Include course navigation, upload, preview, and material persistence checks:
+.\scripts\verify-f01.ps1 -IncludeF02
 ```
 
 This uses temporary random credentials, a separate file database under `backend/target/`,

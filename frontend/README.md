@@ -27,5 +27,11 @@ java -jar target/frontend-0.0.1-SNAPSHOT.jar
 UI and interaction handlers: `src/main/java/com/eecs3311/views/MainView.java`.
 REST calls: `src/main/java/com/eecs3311/course/CourseApi.java`.
 Styles: `src/main/frontend/themes/study-planner/styles.css`.
+Course material uploads and previews: `src/main/java/com/eecs3311/views/CourseMaterialsPanel.java`.
+Open a course card, select **Upload learning materials**, then use **View text** on
+saved files. PDF, DOCX, and UTF-8 TXT are supported, up to 10 MiB each and 10 selected
+files. **Download original** saves the complete uploaded document with its original
+filename and contents; **View text** continues to show its extracted text. GUI uploads are independent: valid files are retained if another file fails.
+Clear the upload list before selecting another batch. The backend also validates all files.
 Credentials are held only in the signed-in view's server memory, never localStorage
 or committed frontend configuration. Sign out invalidates the Vaadin session.

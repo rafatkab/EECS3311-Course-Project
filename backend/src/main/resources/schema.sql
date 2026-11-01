@@ -9,3 +9,15 @@ CREATE TABLE IF NOT EXISTS courses (
     CONSTRAINT valid_course_dates CHECK (end_date >= start_date)
 );
 CREATE INDEX IF NOT EXISTS courses_owner ON courses(owner_id);
+
+CREATE TABLE IF NOT EXISTS learning_materials (
+    material_id UUID PRIMARY KEY,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(100) NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    upload_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    extracted_content CLOB NOT NULL,
+    original_file BLOB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS materials_course ON learning_materials(course_id);

@@ -61,3 +61,25 @@ is rejected, same-day courses and duplicate names are allowed. Invalid input ret
 400 without saving. Invalid authentication returns 401; missing CSRF returns 403;
 database failures return 503 with a safe message. Course editing/deletion and account
 registration are not implemented in this F01 increment.
+
+## Learning material API (F02)
+
+- `POST /api/courses/{id}/materials`: multipart fields named `files`; 1–10 files;
+  Basic authentication, session cookie and CSRF token required. Returns 201 metadata.
+- `GET /api/courses/{id}/materials`: list material metadata for an owned course.
+- `GET /api/courses/{id}/materials/{materialId}/content`: extracted UTF-8 text.
+- `GET /api/courses/{id}/materials/{materialId}/download`: original bytes as an attachment.
+
+Allowed types: PDF, DOCX, UTF-8 TXT. File limit: 10 MiB; extracted text limit:
+1,000,000 characters; PDF limit: 500 pages; DOCX expansion limit: 20 MiB/1000 entries.
+PDFBox and POI parse the actual documents rather than trusting browser MIME types.
+Empty, unreadable, encrypted, binary-text and text-free documents return 400;
+unsupported extensions return 415; oversized files return 413. A missing or unowned
+course/material returns 404. No OCR or LLM calls are performed.
+
+`material/` contains the parser, service, domain record, and repository. The backend
+`Course.addMaterial()` creates the association; `LearningMaterial.getContent()`
+provides extracted text for later features. Metadata, original BLOB, and extracted
+CLOB are saved together in H2. Invalid multi-file API requests roll back the entire
+request. The GUI sends each file separately, so successful files remain if another
+fails. The CLI can submit several paths in one atomic batch.
