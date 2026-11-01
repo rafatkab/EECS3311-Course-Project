@@ -1,0 +1,9 @@
+# Local credentials and runtime data (Stage 2 requirement)
+.env
+.env.*
+!.env.example
+config.local.json
+config.local.properties
+**/data/
+*.mv.db
+*.trace.db

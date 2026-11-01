@@ -1,0 +1,4 @@
+# Copy to config.local.properties (ignored by Git), then replace the placeholder.
+study.auth.username=student
+study.auth.password=REPLACE_WITH_YOUR_LOCAL_PASSWORD
+# F01 is deterministic. No LLM key is needed or read yet.

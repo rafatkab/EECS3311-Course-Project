@@ -1,0 +1,38 @@
+html {
+  --lumo-font-family: 'Segoe UI', sans-serif;
+  --lumo-primary-color: #32634f;
+  --lumo-primary-text-color: #27523f;
+  --lumo-primary-color-10pct: rgba(50, 99, 79, .1);
+  --lumo-base-color: #fff;
+  --lumo-body-text-color: #25382f;
+  --lumo-border-radius-m: 10px;
+  background: #f6f7f2;
+}
+body { margin: 0; }
+.app-shell { min-height: 100vh; gap: 0; background: #f6f7f2; }
+.navigation { padding: 20px 5%; box-sizing: border-box; background: white; border-bottom: 1px solid #e1e7df; }
+.brand, .eyebrow { font-size: .72rem; letter-spacing: .14em; font-weight: 700; color: #32634f; }
+.hero { padding: 55px 5% 38px; gap: 12px; }
+.hero h1 { font-size: clamp(1.9rem, 4vw, 3rem); max-width: 760px; margin: 0; letter-spacing: -.035em; }
+.hero p { color: #627169; margin: 0; }
+.workspace { width: 90%; margin: 0 auto 50px; gap: 16px; }
+.course-toolbar { flex-wrap: wrap; gap: 12px; }
+.course-toolbar h2 { font-size: 1.3rem; margin: 0; }
+.course-toolbar span { color: #627169; font-size: .85rem; }
+.course-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }
+.course-card { border: 1px solid #dfe6dc; border-radius: 16px; background: white; padding: 26px; border-top: 4px solid #739780; overflow-wrap: anywhere; }
+.course-card h3 { margin: 12px 0; font-size: 1.25rem; }
+.course-description { white-space: pre-wrap; color: #627169; }
+.course-dates { font-size: .8rem; border-top: 1px solid #e6ebe3; padding-top: 18px; margin-top: 24px; }
+.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 24px; border: 1px dashed #becfbe; border-radius: 16px; background: #edf2e9; }
+.empty-state p { color: #627169; }
+.error-message { color: #ac2929; font-size: .9rem; margin: 0; }
+.error-message:empty { display: none; }
+.sign-in-panel { box-sizing: border-box; width: min(540px, 92%); margin: 10vh auto; padding: 38px; background: white; border: 1px solid #dfe6dc; border-radius: 18px; }
+.sign-in-panel h1 { font-size: 2.2rem; letter-spacing: -.03em; }
+.sign-in-panel vaadin-text-field, .sign-in-panel vaadin-password-field { width: 100%; }
+@media (max-width: 560px) {
+  .navigation { padding: 14px 5%; gap: 10px; flex-wrap: wrap; }
+  .hero { padding-top: 32px; }
+  .sign-in-panel { padding: 24px; }
+}
