@@ -21,3 +21,19 @@ CREATE TABLE IF NOT EXISTS learning_materials (
     original_file BLOB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS materials_course ON learning_materials(course_id);
+
+CREATE TABLE IF NOT EXISTS summaries (
+    resource_id UUID PRIMARY KEY,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    material_id UUID NOT NULL UNIQUE REFERENCES learning_materials(material_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    summary_text CLOB NOT NULL,
+    evidence CLOB NOT NULL,
+    model VARCHAR(255) NOT NULL,
+    source_characters INT NOT NULL,
+    sections INT NOT NULL,
+    model_calls INT NOT NULL,
+    input_tokens BIGINT NOT NULL,
+    output_tokens BIGINT NOT NULL,
+    source_hash CHAR(64) NOT NULL
+);

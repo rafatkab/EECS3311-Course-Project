@@ -71,6 +71,23 @@ public class CourseApi {
                 HttpResponse.BodyHandlers.ofByteArray()).body();
     }
 
+    public Summary summarize(UUID courseId, UUID materialId, boolean regenerate) {
+        try {
+            String token;
+            synchronized (this) { token = csrfToken(); }
+            var response = send(request("/api/courses/" + courseId + "/materials/" + materialId + "/summary?regenerate=" + regenerate)
+                    .timeout(Duration.ofSeconds(200)).header("X-CSRF-TOKEN", token)
+                    .POST(HttpRequest.BodyPublishers.noBody()).build());
+            return mapper.readValue(response.body(), Summary.class);
+        } catch (IOException exception) { throw new ApiFailure("Could not read the summary response. Try View saved summary before generating again."); }
+    }
+
+    public Summary viewSummary(UUID courseId, UUID materialId) {
+        try {
+            return mapper.readValue(send(request("/api/courses/" + courseId + "/materials/" + materialId + "/summary").GET().build()).body(), Summary.class);
+        } catch (IOException exception) { throw new ApiFailure("Could not read the saved summary."); }
+    }
+
     // Keep token acquisition and POST together: concurrent first uploads must not
     // create different sessions and overwrite each other's CSRF cookie.
     public synchronized void uploadMaterial(UUID courseId, String filename, byte[] bytes) {
@@ -105,7 +122,7 @@ public class CourseApi {
             if (status == 401) throw new ApiFailure("Username or password is incorrect. Sign in again.");
             if (status == 403) throw new ApiFailure("Your request could not be authorized. Sign in again.");
             if (status >= 400) {
-                if (status == 400 || status == 404 || status == 413 || status == 415) {
+                if (status == 400 || status == 404 || status == 409 || status == 413 || status == 415 || status == 429 || status == 502 || status == 503 || status == 504) {
                     String body = response.body() instanceof byte[] bytes ? new String(bytes, StandardCharsets.UTF_8) : String.valueOf(response.body());
                     var details = mapper.readTree(body);
                     throw new ApiFailure(details == null ? "The file or course could not be processed."

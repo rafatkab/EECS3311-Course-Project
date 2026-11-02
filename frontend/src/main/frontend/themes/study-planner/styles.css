@@ -35,6 +35,9 @@ body { margin: 0; }
 .material-row h3 { margin: 0 0 8px; }
 .material-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .material-actions a { color: var(--lumo-primary-text-color); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.summary-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.summary-actions span { color: #627169; font-size: .9rem; }
+.summary-quote { border-left: 3px solid #739780; margin: 12px 0; padding: 8px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .material-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 60vh; overflow: auto; font: .95rem/1.6 var(--lumo-font-family); }
 .upload-result { color: #32634f; }
 .course-card h3 { margin: 12px 0; font-size: 1.25rem; }

@@ -1,0 +1,13 @@
+Software Design: Separating responsibilities
+
+A study planner has a user interface, application logic, domain objects, and persistent storage. Keeping these responsibilities separate makes it easier to change one part without rewriting the others.
+
+The Repository pattern places persistence operations behind an interface. CourseService depends on CourseRepository rather than embedding SQL in its business methods. JdbcCourseRepository implements the interface with prepared SQL statements. Prepared statements bind values separately from the SQL structure; they do not concatenate user input into executable queries.
+
+A Facade offers a simple entry point into a more complex subsystem. StudyAssistantFacade coordinates content processing and resource construction so a course does not need to know the details of model requests, response validation, or section synthesis.
+
+A Singleton provides one shared instance of a component. AIEngine shares an HTTP client and a concurrency limit across agents. Sharing the connection pool avoids rebuilding it for every request. A singleton does not mean that user credentials or document contents should be stored globally.
+
+A Factory centralizes construction of related objects. StudyResourceFactory assigns the identity, creation time, source association, and provenance of generated study resources. Summary is currently its implemented product; other products can be added when their features are developed.
+
+These patterns solve different problems. A repository separates storage, a facade simplifies access to a subsystem, a singleton shares a resource, and a factory centralizes object construction. Naming a class after a pattern is insufficient: its behavior and relationships must demonstrate the pattern's purpose.

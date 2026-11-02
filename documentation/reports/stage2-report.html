@@ -9,11 +9,11 @@ body{font:11pt/1.55 'Segoe UI',Arial,sans-serif;color:#20352c;max-width:1000px;m
 </head>
 <body>
 <h1>Stage 2 Implementation Report</h1>
-<p><strong>AI-powered Study Planner | EECS 3311 | Rafat Kabir</strong><br>Progress draft: F01–F02, November 1, 2026.</p>
+<p><strong>AI-powered Study Planner | EECS 3311 | Rafat Kabir</strong><br>Progress draft: F01–F03, November 1, 2026.</p>
 
 <h2>1. Overview and status</h2>
-<p>The application helps students organize courses and, in later features, generate AI study resources. Students can create courses, open a course workspace, and upload learning materials through a Vaadin GUI or Java CLI. A separate Spring Boot backend stores courses and materials in H2.</p>
-<p>F01 and F02 ingestion are implemented. Editing, deletion, and AI resource generation remain pending. Authentication supports one locally configured account and does not count as a project feature.</p>
+<p>Students can create courses, upload materials, and generate document summaries through a Vaadin GUI or Java CLI. Spring Boot stores courses, materials, and summaries in H2. F03 uses local Ollama; the HTTP adapter also supports hosted OpenAI-compatible providers.</p>
+<p>F01–F03 are implemented. Editing/deletion and F04–F10 remain pending. Authentication supports one locally configured account and does not count as a project feature.</p>
 
 <h2>2. Feature-to-implementation mapping</h2>
 <p><strong>F01: Course Creation.</strong> Deterministic. References: Stage 1 Task 1.2 F01, UC-01, SD01, and Task 4 F01. Students enter a name, description, start date, and end date. The system validates the input, saves an owned course, and displays it on the dashboard. Video: pending.</p>
@@ -38,10 +38,17 @@ body{font:11pt/1.55 'Segoe UI',Arial,sans-serif;color:#20352c;max-width:1000px;m
 <tr><td>Storage / CLI</td><td><code>MaterialRepository</code> and <code>JdbcMaterialRepository</code> save metadata, original BLOB, and extracted text together. <code>StudyPlannerCli</code> adds <code>upload</code>, <code>materials</code>, and <code>content</code>.</td></tr>
 </table>
 <p><strong>Rules:</strong> up to 10 files, 10 MiB each; unsupported, empty, corrupt, encrypted, or text-free files are rejected. No OCR is provided. Text is limited to 1,000,000 characters, PDF to 500 pages, and expanded DOCX to 20 MiB/1000 entries. API batches roll back on any failure; GUI files upload independently. Originals and text survive restarts.</p>
+<p><strong>F03: Document Summarization.</strong> AI-based. References: Stage 1 F03, UC-03, SD02 summary branch, and Task 4 F03. Select Summarize document; the agent summarizes source sections, synthesizes them when needed, resolves selected source-excerpt IDs to verified quotations, and saves the result. View saved summary reuses it; regeneration explicitly requests a replacement. CLI: <code>summarize</code>, <code>summary</code>, <code>regenerate-summary</code>. Video pending.</p>
+<table>
+<tr><th>Part</th><th>Implementation</th></tr>
+<tr><td>GUI / API</td><td><code>frontend/.../views/SummaryActions</code> runs background requests; <code>CourseApi.summarize/viewSummary</code> call <code>backend/.../resource/SummaryController</code>. Progress and safe errors remain visible while inference runs.</td></tr>
+<tr><td>Agent / resource</td><td><code>Course.generateStudyResource</code> calls <code>StudyAssistantFacade.summarize</code>. <code>ContentAgent.summarize</code> plans sections and validates responses from <code>AIEngine.generate</code>. <code>StudyResourceFactory.createResource</code> constructs <code>Summary</code>, extending <code>StudyResource</code>; <code>view</code> returns its text.</td></tr>
+<tr><td>Storage</td><td><code>SummaryService</code> verifies ownership, guards concurrent generation, and checks the source hash. <code>SummaryRepository/JdbcSummaryRepository</code> save the latest summary, evidence, model, and usage. Failed regeneration preserves the previous result.</td></tr>
+</table>
+<p>F03 accepts 40–32,000 source characters. Generation has schema-constrained output, bounded calls/time, and one repair attempt for invalid results. Missing setup, provider failures, insufficient text, invalid output, and timeouts return errors without saving. Quotations must match the source; factual accuracy still needs human review.</p>
 <p>Remaining Stage 1 features are <strong>not implemented</strong>:</p>
 <table>
 <tr><th>ID</th><th>Feature</th><th>ID</th><th>Feature</th></tr>
-<tr><td>F03</td><td>Document Summarization</td><td>—</td><td>—</td></tr>
 <tr><td>F04</td><td>Concept Extraction</td><td>F05</td><td>Question Answering Over Materials</td></tr>
 <tr><td>F06</td><td>Personalized Study-Plan Generation</td><td>F07</td><td>Flashcard Generation</td></tr>
 <tr><td>F08</td><td>Quiz Generation</td><td>F09</td><td>Automatic Quiz Grading</td></tr>
@@ -49,16 +56,37 @@ body{font:11pt/1.55 'Segoe UI',Arial,sans-serif;color:#20352c;max-width:1000px;m
 </table>
 
 <h2>3. Design patterns and diagrams</h2>
-<p>The five Stage 1 patterns remain pending: Strategy for grading, Observer for calendar updates, Facade for AI operations, Singleton for AIEngine, and Factory for study resources. F01–F02 do not implement these patterns. Spring singleton beans and <code>CourseApiFactory</code> are not counted toward them.</p>
+<table>
+<tr><th>Stage 1 pattern</th><th>Implementation and purpose</th></tr>
+<tr><td>Facade</td><td><code>StudyAssistantFacade.summarize</code> coordinates the agent and resource factory, hiding model orchestration and construction from course/UI callers.</td></tr>
+<tr><td>Singleton</td><td><code>AIEngine</code> has a private constructor and holder-based <code>getInstance</code>. Agents share one HTTP connection pool and concurrency limit; provider settings remain immutable per call.</td></tr>
+<tr><td>Factory</td><td><code>StudyResourceFactory.createResource</code> centralizes resource identity, timestamp, source association, and provenance. This simple factory currently constructs only <code>Summary</code>; other products remain pending.</td></tr>
+</table>
+<p>Strategy and Observer remain pending. <code>CourseApiFactory</code> and Spring bean scopes are not counted as additional patterns.</p>
 <p>F01 adds a Repository abstraction: <code>CourseService</code> depends on <code>CourseRepository</code>, implemented by <code>JdbcCourseRepository</code>. This keeps SQL separate from application logic; it does not replace a planned pattern.</p>
-<p>Current F01 class relationships:</p>
-<svg viewBox="0 0 940 450" role="img" aria-label="F01 implementation class diagram">
-<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3e6651"/></marker></defs>
-<g fill="#edf3e9" stroke="#6c8a76"><rect x="10" y="10" width="270" height="85" rx="8"/><rect x="350" y="10" width="270" height="85" rx="8"/><rect x="350" y="140" width="270" height="85" rx="8"/><rect x="10" y="270" width="270" height="85" rx="8"/><rect x="350" y="270" width="270" height="85" rx="8"/><rect x="680" y="270" width="250" height="85" rx="8"/><rect x="680" y="10" width="250" height="85" rx="8"/></g>
-<g font-family="Arial" font-size="14" fill="#20352c"><text x="30" y="37">MainView / CourseApi</text><text x="30" y="62">+createCourse / +viewCourses</text><text x="370" y="37">CourseController</text><text x="370" y="62">+createCourse / +viewCourses</text><text x="370" y="167">CourseService</text><text x="370" y="192">+createCourse / +getCourse</text><text x="30" y="297">User → Course</text><text x="30" y="322">+createCourse / +viewCourses</text><text x="370" y="297">«interface» CourseRepository</text><text x="370" y="322">+save / +findByOwner</text><text x="700" y="297">JdbcCourseRepository</text><text x="700" y="322">implements repository</text><text x="700" y="37">StudyPlannerCli</text><text x="700" y="62">+run (create / list)</text><text x="390" y="418">H2 courses: owner_id, name, description, dates</text></g>
-<g stroke="#3e6651" stroke-width="2" fill="none" marker-end="url(#arrow)"><path d="M280 50 H350"/><path d="M680 50 H620"/><path d="M485 95 V140"/><path d="M350 180 H145 V270"/><path d="M485 225 V270"/><path d="M680 310 H620"/><path d="M800 355 V405 H735"/></g>
+<p>F03 UML class relationships; F01/F02 diagrams are linked below:</p>
+<svg viewBox="0 0 940 570" role="img" aria-label="F03 UML class relationships">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#3e6651"/></marker><marker id="inherit" markerWidth="12" markerHeight="12" refX="11" refY="5" orient="auto"><path d="M1,1 L11,5 L1,9 z" fill="white" stroke="#3e6651"/></marker></defs>
+<g fill="#edf3e9" stroke="#6c8a76"><rect x="10" y="10" width="280" height="90"/><rect x="330" y="10" width="280" height="90"/><rect x="650" y="10" width="280" height="90"/><rect x="10" y="150" width="280" height="100"/><rect x="330" y="150" width="280" height="100"/><rect x="650" y="150" width="280" height="100"/><rect x="10" y="300" width="280" height="90"/><rect x="330" y="300" width="280" height="90"/><rect x="650" y="300" width="280" height="90"/><rect x="10" y="450" width="280" height="100"/><rect x="330" y="450" width="280" height="100"/><rect x="650" y="450" width="280" height="100"/></g>
+<g font-family="Arial" font-size="14" fill="#20352c">
+<text x="25" y="35">SummaryActions</text><text x="25" y="61">+load / +showSummary</text><text x="25" y="83">uses CourseApi</text>
+<text x="345" y="35">SummaryController</text><text x="345" y="61">+summarize / +viewSummary</text>
+<text x="665" y="35">SummaryService</text><text x="665" y="61">+summarize / +getSummary</text><text x="665" y="83">ownership, cache, generation guard</text>
+<text x="25" y="175">ContentAgent</text><text x="25" y="201">+summarize</text><text x="25" y="225">-split / -generateValidated</text>
+<text x="345" y="175">StudyAssistantFacade «Facade»</text><text x="345" y="201">+summarize(material): Summary</text>
+<text x="665" y="175">Course</text><text x="665" y="201">+generateStudyResource</text><text x="665" y="225">courseId, ownerId</text>
+<text x="25" y="325">AIEngine «Singleton»</text><text x="25" y="351">-AIEngine() / +getInstance() {static}</text><text x="25" y="373">+generate</text>
+<text x="345" y="325">StudyResourceFactory</text><text x="345" y="351">«Simple Factory»</text><text x="345" y="373">+createResource</text>
+<text x="665" y="325">«interface» SummaryRepository</text><text x="665" y="351">+find / +save</text>
+<text x="25" y="475">StudyResource {abstract}</text><text x="25" y="501">resourceId, source IDs, createdAt</text><text x="25" y="525">+view(): String {abstract}</text>
+<text x="345" y="475">Summary</text><text x="345" y="501">summaryText, evidence, model</text><text x="345" y="525">+view(): String</text>
+<text x="665" y="475">JdbcSummaryRepository</text><text x="665" y="501">+find / +save</text><text x="665" y="525">H2 persistence</text>
+</g>
+<g stroke="#3e6651" stroke-width="2" fill="none" marker-end="url(#arrow)"><path d="M290 55 H330"/><path d="M610 55 H650"/><path d="M790 100 V150"/><path d="M650 195 H610"/><path d="M330 195 H290"/><path d="M150 250 V300"/><path d="M470 250 V300"/><path d="M470 390 V450"/><path d="M930 65 H937 V280 H790 V300"/></g>
+<path d="M330 500 H290" stroke="#3e6651" stroke-width="2" fill="none" marker-end="url(#inherit)"/>
+<path d="M790 450 V390" stroke="#3e6651" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#inherit)"/>
 </svg>
-<p>F02 adds CourseController → MaterialService → Course.addMaterial → LearningMaterial → MaterialRepository/JdbcMaterialRepository. MaterialParser validates and extracts text. Updated diagrams: <code>documentation/diagrams/stage2-f01.md</code> and <code>stage2-f02.md</code>. Original Stage 1 diagrams are preserved.</p>
+<p>Updated UML/sequence diagrams: <code>documentation/diagrams/stage2-f01.md</code>, <code>stage2-f02.md</code>, and <code>stage2-f03.md</code>. They show the implemented classes and pattern roles; original Stage 1 diagrams are preserved.</p>
 
 <h2>4. Changes and rationale</h2>
 <table>
@@ -69,33 +97,37 @@ body{font:11pt/1.55 'Segoe UI',Arial,sans-serif;color:#20352c;max-width:1000px;m
 <tr><td>Four course fields; detailed limits unspecified.</td><td>Required fields, text limits, trimming, and ordered dates.</td><td>Rejects invalid courses consistently. Editing/deletion remain pending.</td></tr>
 <tr><td>GUI and CLI required.</td><td>Java CLI calls the same REST API as the GUI.</td><td>Reuses validation and storage. Future agent features still need CLI support.</td></tr>
 <tr><td>F02/UC-02/SD01: CourseController → Course.addMaterial → LearningMaterial; file rules unspecified.</td><td>Added course navigation, MaterialService, parser, repository, text previews, and browser downloads of originals. PDF/DOCX/TXT, size and extraction limits apply.</td><td>Students can read extracted text or save the complete document, preserving formatting and images. Durable BLOB/CLOB storage keeps originals and text consistent. No AI or OCR is claimed.</td></tr>
+<tr><td>F03/UC-03/SD02: Facade → ContentAgent → shared AIEngine → resource Factory → Summary.</td><td>Agent returns validated draft data for factory construction; section planning, synthesis, indexed source evidence, cache/source hashes, and explicit regeneration were added.</td><td>Handles longer documents and malformed model output with bounded work. SummaryService adds ownership and persistent memory. These additions affect the F03 sequence; original pattern roles are retained.</td></tr>
+<tr><td>Stage 1 proposed ChatGPT, LangChain/RAG, and shared AIEngine.</td><td>Direct Java HTTP orchestration; holder-based singleton accepts provider settings per call. Local Ollama is selected.</td><td>Keeps the existing Java apps and enables local inference. RAG for later question-answering remains pending; no full-system RAG implementation is claimed.</td></tr>
 </table>
 <p>No original feature or planned pattern has been removed or replaced.</p>
 
 <h2>5. AI tools and collaboration</h2>
-<p><strong>Tool:</strong> OpenAI Codex, a GPT-6-based coding agent; exact runtime model ID unavailable. Used to review requirements and diagrams, implement F01–F02, write tests, and maintain this report.</p>
-<p><strong>Interaction:</strong> the student requested F01, a shorter report, then F02. Codex implemented the course and material flows and their verification while retaining the concise report structure.</p>
-<p><strong>Tokens and monetary cost:</strong> unavailable in this session; the student must add platform usage and billing totals before submission. Human code review and understanding remain required. F01–F02 ingestion make no LLM calls.</p>
+<p><strong>Development tool:</strong> OpenAI Codex, a GPT-6-based coding agent; exact runtime model ID unavailable. Used for F01–F03 code, tests, diagrams, and reporting. <strong>Application LLM:</strong> local Ollama with qwen2.5:1.5b; no hosted API billing.</p>
+<p><strong>Interaction:</strong> the student requested F01/F02, a shorter report, then F03 and local Ollama. Codex implemented and checked the course, material, and summary flows.</p>
+<p><strong>Tokens and cost:</strong> Codex totals remain unavailable; add platform usage/billing before submission. Successful summaries retain provider-reported token counts; -1 means unavailable. Local compute cost is not measured. Human review remains required.</p>
 
 <h2>6. Development and verification</h2>
-<p>Twelve backend tests and the production frontend build pass. Tests cover courses, real PDF/DOCX/TXT uploads, parsing, text/original retrieval, invalid files, limits, batch rollback, authentication, CSRF, and owner isolation. Chrome/CLI checks pass for F01 creation and F02 multi-file upload, text preview, original downloads (exact names/bytes), file errors, course isolation, keyboard/mobile access, reload, backend failure, and restart persistence.</p>
+<p>Twenty-five backend tests and the production frontend build pass. Coverage includes F01/F02 regression, F03 ownership/CSRF, section planning, output repair, quotation checks, cache/regeneration, timeouts, provider errors, and concurrent generation. Scripted-provider Chrome/CLI checks pass for summary progress, dialogs, saved results, regeneration, errors, mobile layout, and persistence. These fixtures test integration, not model quality. Real qwen2.5:1.5b verification also passed: CLI generation, browser viewing/regeneration, and a two-section document synthesized in three model calls. Source quotations were checked and the sample output reviewed. This verifies a working local integration, not general model accuracy.</p>
 <p>Checks: <code>backend/mvnw.cmd clean verify</code>, frontend <code>mvnw.cmd package -Pproduction</code>, and <code>scripts/verify-f01.ps1</code>. Runtime checks use isolated test data and stop their own servers. A missing BCrypt encoding prefix was found and corrected during testing.</p>
 <p>F02 runtime checks use <code>scripts/verify-f01.ps1 -IncludeF02</code>. Real-client checks caught a text-preview Accept-header mismatch and a parallel-upload CSRF session race. Correct response headers and serialized token/write requests fixed them.</p>
+<p>Live testing exposed paraphrased quotations and missing JSON fields in the small model; constrained output and indexed evidence corrected these failures. F03 checks: <code>scripts/verify-f01.ps1 -IncludeF03</code> uses a test-only provider; <code>scripts/verify-f03-live.ps1</code> uses real Ollama and a safe lecture sample. No production fake-response fallback exists.</p>
 <table>
 <tr><th>Toronto reporting period</th><th>Minimum code commits</th><th>Observed local evidence</th></tr>
 <tr><td>October 20–26, 2026</td><td>5</td><td>No qualifying local commits found; remote evidence needs checking.</td></tr>
-<tr><td>October 27–November 2, 2026</td><td>5</td><td><a href="https://github.com/rafatkab/EECS3311-Course-Project/commit/a0db921">a0db921: starter</a>; <a href="https://github.com/rafatkab/EECS3311-Course-Project/commit/42853d5">42853d5: F01</a>. Push status not verified.</td></tr>
+<tr><td>October 27–November 2, 2026</td><td>5</td><td><a href="https://github.com/rafatkab/EECS3311-Course-Project/commit/a0db921">a0db921: starter</a>; <a href="https://github.com/rafatkab/EECS3311-Course-Project/commit/42853d5">42853d5: F01</a>; <a href="https://github.com/rafatkab/EECS3311-Course-Project/commit/8ab568b">8ab568b: F02</a>. F03 uncommitted; push status not verified.</td></tr>
 <tr><td>November 3–9, 2026</td><td>5</td><td>Pending.</td></tr>
 </table>
 <p>Local credentials and database files are ignored by Git. <code>backend/config.local.properties.example</code> provides placeholders; setup instructions are in the README. F01 requires no API key.</p>
-<p>Before the November 10 submission: complete the remaining features, five patterns, LLM/agent behavior, agent CLI, full-system UML, videos, cost records, and commit evidence. Check any additional baseline assignment instructions; only the supplied Stage 1 report and Stage 2 instructions were reviewed.</p>
+<p>Before November 10: complete F04–F10, Strategy/Observer and additional resource products, full-system diagrams, videos, cost records, and commit evidence. Check additional baseline instructions; only the supplied Stage 1 report and Stage 2 instructions were reviewed.</p>
 
 <h2>7. Demonstration index</h2>
 <table>
 <tr><th>Feature</th><th>Video status</th><th>Demonstration scope</th></tr>
 <tr><td>F01 Course Creation</td><td>Recording and accessible link/timestamp pending.</td><td>Identify F01; show GUI and CLI creation, input errors, dashboard output, and persistence. Explain that F01 is deterministic. Keep credentials hidden.</td></tr>
 <tr><td>F02 Upload Learning Materials</td><td>Recording and link/timestamp pending.</td><td>Show course navigation, GUI/CLI upload, saved files, preview, original downloads, invalid/type/size errors, and persistence. Identify deterministic extraction and pending AI processing.</td></tr>
-<tr><td>F03–F10 and UC-11</td><td>Pending implementation.</td><td>Add a labeled video segment for each implemented feature.</td></tr>
+<tr><td>F03 Document Summarization</td><td>Recording/link pending.</td><td>Show real Ollama GUI/CLI generation, source quotations, saved summaries, regeneration, and error cases. Explain section planning and output validation.</td></tr>
+<tr><td>F04–F10 and UC-11</td><td>Pending implementation.</td><td>Add a labeled video segment for each implemented feature.</td></tr>
 </table>
 <p>Automated browser checks do not replace demonstration videos. Update this source and regenerate <code>stage2-report.pdf</code> as features are completed.</p>
 </body></html>

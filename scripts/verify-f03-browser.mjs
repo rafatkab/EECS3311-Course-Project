@@ -1,0 +1,66 @@
+// Integration plumbing only: provider is scripts/fixtures/llm-provider.mjs.
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+const require = createRequire(import.meta.url);
+const { chromium } = require('../frontend/target/browser-tools/node_modules/playwright-core');
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', error => errors.push(error.message));
+const mode = async value => fetch('http://127.0.0.1:8092/mode', { method: 'POST', body: JSON.stringify({ mode: value }) });
+const calls = async () => (await (await fetch('http://127.0.0.1:8092/stats')).json()).calls;
+const waitText = async text => page.getByText(text, { exact: false }).first().waitFor();
+try {
+  await page.goto('http://localhost:8090');
+  await page.locator('#username input').fill(process.env.STUDY_USERNAME);
+  await page.locator('#password input').fill(process.env.STUDY_PASSWORD);
+  await page.locator('#sign-in').click();
+  await page.getByRole('button', { name: 'Open course CLI verification course', exact: true }).click();
+  const material = page.locator('.material-row').filter({ hasText: 'gui-notes.txt' });
+  await material.getByRole('button', { name: 'Summarize document', exact: true }).click();
+  await waitText('Generating summary');
+  await waitText('Protocol test fixture: repository interfaces');
+  await waitText('Supporting source quotations');
+  await waitText('GUI lecture notes about Strategy and Observer patterns.');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.locator('vaadin-dialog-overlay').waitFor({ state: 'hidden' });
+  const generatedCalls = await calls();
+  await mode('unavailable');
+  await material.getByRole('button', { name: 'View saved summary', exact: true }).click();
+  await waitText('Protocol test fixture: repository interfaces');
+  assert.equal(await calls(), generatedCalls);
+  await page.getByRole('button', { name: 'Regenerate summary', exact: true }).click();
+  await waitText('The AI provider rejected the request');
+  await material.getByRole('button', { name: 'View saved summary', exact: true }).click();
+  await waitText('Protocol test fixture: repository interfaces');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.locator('vaadin-dialog-overlay').waitFor({ state: 'hidden' });
+  await mode('invalid');
+  await material.getByRole('button', { name: 'View saved summary', exact: true }).click();
+  await waitText('Protocol test fixture: repository interfaces');
+  await page.getByRole('button', { name: 'Regenerate summary', exact: true }).click();
+  await waitText('verifiable source quotations');
+  await mode('valid');
+  await material.getByRole('button', { name: 'View saved summary', exact: true }).click();
+  await waitText('Protocol test fixture: repository interfaces');
+  const previousId = await page.locator('vaadin-dialog-overlay pre[data-summary-id]').getAttribute('data-summary-id');
+  await page.getByRole('button', { name: 'Regenerate summary', exact: true }).click();
+  await page.locator(`vaadin-dialog-overlay pre[data-summary-id]:not([data-summary-id="${previousId}"])`).waitFor();
+  await waitText('Protocol test fixture: repository interfaces');
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.screenshot({ path: fileURLToPath(new URL('../frontend/target/f03-summary-mobile.png', import.meta.url)), fullPage: true });
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.locator('vaadin-dialog-overlay').waitFor({ state: 'hidden' });
+  await page.screenshot({ path: fileURLToPath(new URL('../frontend/target/f03-materials.png', import.meta.url)), fullPage: true });
+  assert.deepEqual(errors, []);
+  console.log('PASS: F03 browser plumbing with scripted provider: progress, generated/saved summaries, quotes, regeneration, preserved result on errors, and mobile UI. Live model quality NOT verified.');
+} catch (error) {
+  console.log(error.stack);
+  await page.screenshot({ path: fileURLToPath(new URL('../frontend/target/f03-failure.png', import.meta.url)), fullPage: true });
+  process.exitCode = 1;
+} finally {
+  await mode('valid');
+  await browser.close();
+}

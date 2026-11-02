@@ -23,14 +23,16 @@ import java.time.format.DateTimeFormatter;
 public class CourseMaterialsPanel extends VerticalLayout {
     private final CourseApi api;
     private final Course course;
+    private final java.util.concurrent.Executor summaryExecutor;
     private final Div materials = new Div();
     private final Paragraph error = new Paragraph();
     private final Paragraph result = new Paragraph();
     private final Span count = new Span();
 
-    public CourseMaterialsPanel(CourseApi api, Course course, Runnable back) {
+    public CourseMaterialsPanel(CourseApi api, Course course, java.util.concurrent.Executor summaryExecutor, Runnable back) {
         this.api = api;
         this.course = course;
+        this.summaryExecutor = summaryExecutor;
         setWidth("90%");
         setPadding(false);
         addClassName("materials-workspace");
@@ -133,7 +135,8 @@ public class CourseMaterialsPanel extends VerticalLayout {
                 download.getElement().setAttribute("download", material.fileName());
                 Div actions = new Div(view, download);
                 actions.addClassName("material-actions");
-                Div row = new Div(new H3(material.fileName()), details, actions);
+                Div row = new Div(new H3(material.fileName()), details, actions,
+                        new SummaryActions(api, course.courseId(), material, summaryExecutor, error::setText));
                 row.addClassName("material-row");
                 materials.add(row);
             }

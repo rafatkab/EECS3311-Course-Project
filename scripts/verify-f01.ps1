@@ -1,6 +1,7 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02)
+param([switch] $IncludeF02, [switch] $IncludeF03)
+if ($IncludeF03) { $IncludeF02 = $true }
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path $PSScriptRoot -Parent
 $javaPath = Join-Path $env:JAVA_HOME 'bin\java.exe'
@@ -11,7 +12,8 @@ $runPath = Join-Path $backendPath "target\qa-$runId"
 New-Item -ItemType Directory -Path $runPath | Out-Null
 $backendProcess = $null
 $frontendProcess = $null
-$environmentKeys = @('STUDY_USERNAME','STUDY_PASSWORD','STUDY_AUTH_USERNAME','STUDY_AUTH_PASSWORD','SPRING_DATASOURCE_URL','BACKEND_PORT','PORT','BACKEND_URL')
+$providerProcess = $null
+$environmentKeys = @('STUDY_USERNAME','STUDY_PASSWORD','STUDY_AUTH_USERNAME','STUDY_AUTH_PASSWORD','SPRING_DATASOURCE_URL','BACKEND_PORT','PORT','BACKEND_URL','STUDY_AI_BASE_URL','STUDY_AI_MODEL','STUDY_AI_API_KEY','STUDY_AI_TOKEN_LIMIT_FIELD')
 $previousEnvironment = @{}
 foreach ($key in $environmentKeys) { $previousEnvironment[$key] = [Environment]::GetEnvironmentVariable($key, 'Process') }
 $env:STUDY_USERNAME = 'qa-student'
@@ -36,8 +38,18 @@ function Start-Backend([string] $suffix) {
     Start-Process -FilePath $javaPath -ArgumentList @('-jar', 'target/backend-0.0.1-SNAPSHOT.jar') -WorkingDirectory $backendPath -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runPath "backend-$suffix.log") -RedirectStandardError (Join-Path $runPath "backend-$suffix.err.log")
 }
 try {
-    foreach ($testPort in @(8090, 8091)) {
+    $testPorts = @(8090, 8091)
+    if ($IncludeF03) { $testPorts += 8092 }
+    foreach ($testPort in $testPorts) {
         if (netstat -ano | Select-String ":$testPort\s.*LISTENING") { throw "QA port $testPort is occupied; stop that app before running this script." }
+    }
+    if ($IncludeF03) {
+        $env:STUDY_AI_BASE_URL = 'http://127.0.0.1:8092/v1'
+        $env:STUDY_AI_MODEL = 'fixture-model'
+        $env:STUDY_AI_API_KEY = 'fixture-key-not-a-real-credential'
+        $env:STUDY_AI_TOKEN_LIMIT_FIELD = 'max_tokens'
+        $providerProcess = Start-Process -FilePath (Get-Command node).Source -ArgumentList @('scripts/fixtures/llm-provider.mjs') -WorkingDirectory $repoPath -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runPath 'fixture.log') -RedirectStandardError (Join-Path $runPath 'fixture.err.log')
+        Wait-Server 'http://127.0.0.1:8092/health'
     }
     $backendProcess = Start-Backend 'first'
     Wait-Server 'http://localhost:8091/actuator/health'
@@ -63,6 +75,13 @@ try {
             if ($LASTEXITCODE -ne 0 -or $extracted -notmatch 'Repository patterns') { throw 'F02 CLI content retrieval failed.' }
             node scripts/verify-f02-browser.mjs
             if ($LASTEXITCODE -ne 0) { throw 'F02 browser verification failed.' }
+            if ($IncludeF03) {
+                $summary = & $javaPath cli/StudyPlannerCli.java summarize $courseIdentifier $materialIdentifier
+                if ($LASTEXITCODE -ne 0 -or $summary -notmatch 'Protocol test fixture') { throw 'F03 CLI generation plumbing failed.' }
+                $summaryIdentifier = ($summary | ConvertFrom-Json).resourceId
+                node scripts/verify-f03-browser.mjs
+                if ($LASTEXITCODE -ne 0) { throw 'F03 browser verification failed.' }
+            }
         }
         Stop-Process -Id $backendProcess.Id
         $backendProcess.WaitForExit()
@@ -84,9 +103,18 @@ try {
             if ([System.IO.File]::ReadAllText($downloadPath) -ne 'CLI lecture notes about Repository patterns.') { throw 'Original file restart persistence failed.' }
             Write-Output 'PASS: F02 CLI upload/list/content and metadata/text/original-byte persistence after backend restart.'
         }
+        if ($IncludeF03) {
+            Stop-Process -Id $providerProcess.Id
+            $providerProcess.WaitForExit()
+            $storedSummary = & $javaPath cli/StudyPlannerCli.java summary $courseIdentifier $materialIdentifier
+            if ($LASTEXITCODE -ne 0 -or ($storedSummary | ConvertFrom-Json).resourceId -ne $summaryIdentifier) { throw 'Saved summary restart/offline retrieval failed.' }
+            $cachedSummary = & $javaPath cli/StudyPlannerCli.java summarize $courseIdentifier $materialIdentifier
+            if ($LASTEXITCODE -ne 0 -or ($cachedSummary | ConvertFrom-Json).resourceId -ne $summaryIdentifier) { throw 'Summary cache unexpectedly required a model call.' }
+            Write-Output 'PASS: F03 CLI and saved-summary persistence after restart without a provider. Scripted fixture only; live AI quality not verified.'
+        }
     } finally { Pop-Location }
 } finally {
-    foreach ($ownedProcess in @($backendProcess, $frontendProcess)) {
+    foreach ($ownedProcess in @($backendProcess, $frontendProcess, $providerProcess)) {
         if ($null -ne $ownedProcess -and -not $ownedProcess.HasExited) { Stop-Process -Id $ownedProcess.Id }
     }
     foreach ($key in $environmentKeys) { [Environment]::SetEnvironmentVariable($key, $previousEnvironment[$key], 'Process') }

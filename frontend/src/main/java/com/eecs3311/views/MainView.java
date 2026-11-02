@@ -25,6 +25,7 @@ import java.util.List;
 @PageTitle("Courses | Study Planner")
 public class MainView extends VerticalLayout {
     private final CourseApiFactory apiFactory;
+    private final java.util.concurrent.Executor summaryExecutor;
     private CourseApi api;
     private String signedInUsername;
     private List<Course> displayedCourses = List.of();
@@ -32,8 +33,9 @@ public class MainView extends VerticalLayout {
     private final Paragraph status = new Paragraph();
     private final Span count = new Span();
 
-    public MainView(CourseApiFactory apiFactory) {
+    public MainView(CourseApiFactory apiFactory, org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor summaryExecutor) {
         this.apiFactory = apiFactory;
+        this.summaryExecutor = summaryExecutor;
         addClassName("app-shell");
         setPadding(false);
         showSignIn();
@@ -158,7 +160,7 @@ public class MainView extends VerticalLayout {
 
     private void openCourse(Course course) {
         removeAll();
-        add(new CourseMaterialsPanel(api, course, () -> {
+        add(new CourseMaterialsPanel(api, course, summaryExecutor, () -> {
             showDashboard(signedInUsername, displayedCourses);
             refreshCourses();
         }));

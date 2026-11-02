@@ -83,3 +83,51 @@ provides extracted text for later features. Metadata, original BLOB, and extract
 CLOB are saved together in H2. Invalid multi-file API requests roll back the entire
 request. The GUI sends each file separately, so successful files remain if another
 fails. The CLI can submit several paths in one atomic batch.
+
+## Document summaries (F03)
+
+Configure local Ollama as described in the root README. The backend still starts
+without an AI model, so F01/F02 remain available. Attempting generation without a
+configured model returns 503 with setup guidance; saved summaries do not require it.
+
+- `POST /api/courses/{id}/materials/{materialId}/summary`: generate or return a cached summary.
+- The same POST with `?regenerate=true`: request a replacement from the model.
+- `GET /api/courses/{id}/materials/{materialId}/summary`: read the saved result, or 404.
+
+All endpoints enforce course ownership; writes also require the existing CSRF token.
+Results contain text, exact supporting quotations, source IDs, model, creation time,
+section/call counts, and provider-reported tokens (`-1` means not reported).
+
+`Course.generateStudyResource()` delegates to `StudyAssistantFacade`, which uses
+`ContentAgent`, the shared `AIEngine.getInstance()`, and `StudyResourceFactory` to
+create a `Summary` extending `StudyResource`. The repository persists the latest
+summary per material with a source hash. Failed generation never overwrites it.
+The simple factory currently has only the Summary product; other resource types
+are not implemented. Strategy and Observer remain future work.
+
+The agent splits up to 32,000 characters into approximately 6000-character sections,
+summarizes each, and synthesizes multiple sections. The model selects numbered
+source excerpts; the backend resolves them to exact quotations. It validates JSON,
+length and selected IDs, with one repair attempt per response. Documents below 40 readable
+characters or above the input limit are rejected before any model request. Limits:
+14 calls, 180 seconds per operation, two concurrent model calls; one generation per
+material. Prompt text treats uploaded material as untrusted data. Citation checks
+do not prove every summary statement correct; users must review the source.
+
+Provider defaults: local `http://localhost:11434/v1`, no key, `max_tokens`. Settings
+include `study.ai.model`, `base-url`, `api-key`, `token-limit-field`, `timeout-seconds`
+(1–120; default 45), and `max-output-tokens` (128–4096; default 1500).
+For a hosted OpenAI-compatible provider, use HTTPS and a backend-only API key;
+OpenAI models use `max_completion_tokens`. No requests are redirected and no raw
+provider diagnostic or key is returned in application errors. See the official
+[Ollama compatibility](https://docs.ollama.com/api/openai-compatibility) and
+[OpenAI API](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) documentation.
+
+The provider/model must support schema-constrained structured outputs. The request
+requires the summary and a bounded list of source-excerpt IDs; the backend validates
+them independently and resolves quotations from the uploaded text.
+
+Errors: insufficient content 400, oversized input 413, concurrent generation 409,
+rate/busy limits 429, invalid provider output/unavailable provider 502, configuration
+or provider authentication 503, timeout 504. Network/provider failures are not retried
+automatically; repeated invalid structured output fails without saving.

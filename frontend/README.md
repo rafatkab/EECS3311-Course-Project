@@ -35,3 +35,14 @@ filename and contents; **View text** continues to show its extracted text. GUI u
 Clear the upload list before selecting another batch. The backend also validates all files.
 Credentials are held only in the signed-in view's server memory, never localStorage
 or committed frontend configuration. Sign out invalidates the Vaadin session.
+
+## Document summaries
+
+Configure local Ollama on the backend first. **Summarize document** generates a
+summary (or reuses the saved result). **View saved summary** makes no model call.
+The dialog shows the summary, its model, and supporting source quotations.
+**Regenerate summary** requests a new result; failure leaves the previous one intact.
+
+`views/SummaryActions.java` runs requests in a bounded background executor configured
+by `config/UiTaskConfiguration.java`, so the UI can show progress without holding
+its session lock during inference. Summaries display as escaped plain text.

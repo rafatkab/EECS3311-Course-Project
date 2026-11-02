@@ -1,4 +1,11 @@
 # Copy to config.local.properties (ignored by Git), then replace the placeholder.
 study.auth.username=student
 study.auth.password=REPLACE_WITH_YOUR_LOCAL_PASSWORD
-# F01 is deterministic. No LLM key is needed or read yet.
+# F03: choose a model you have installed in Ollama, or a hosted compatible model.
+# No real credentials belong in this example or in Git.
+study.ai.base-url=http://localhost:11434/v1
+study.ai.model=REPLACE_WITH_YOUR_INSTALLED_MODEL
+study.ai.api-key=
+study.ai.token-limit-field=max_tokens
+# Hosted OpenAI: use https://api.openai.com/v1, your model/API key, and
+# study.ai.token-limit-field=max_completion_tokens

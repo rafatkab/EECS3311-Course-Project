@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import com.eecs3311.backend.ai.AiFailure;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -21,6 +22,11 @@ import java.util.Map;
 public class ApiExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
     public record ApiError(String message, Map<String, String> fields) { }
+
+    @ExceptionHandler(AiFailure.class)
+    ResponseEntity<ApiError> ai(AiFailure exception) {
+        return ResponseEntity.status(exception.status()).body(new ApiError(exception.getMessage(), Map.of()));
+    }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     ResponseEntity<ApiError> tooLarge(MaxUploadSizeExceededException exception) {

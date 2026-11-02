@@ -1,6 +1,8 @@
 package com.eecs3311.backend.course;
 
 import com.eecs3311.backend.material.LearningMaterial;
+import com.eecs3311.backend.ai.StudyAssistantFacade;
+import com.eecs3311.backend.resource.Summary;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -12,6 +14,12 @@ public record Course(UUID courseId, UUID ownerId, String name, String descriptio
     /** Stage 1 F02: create a material belonging to this course. */
     public LearningMaterial addMaterial(String fileName, String fileType, long sizeBytes, String text) {
         return new LearningMaterial(UUID.randomUUID(), courseId, fileName, fileType, sizeBytes, Instant.now(), text);
+    }
+
+    /** Stage 1 F03: request a resource for a material associated with this course. */
+    public Summary generateStudyResource(LearningMaterial material, StudyAssistantFacade assistant) {
+        if (!courseId.equals(material.courseId())) throw new IllegalArgumentException("The material does not belong to this course.");
+        return assistant.summarize(material);
     }
 
     public Course {
