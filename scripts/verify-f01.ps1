@@ -1,6 +1,7 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02, [switch] $IncludeF03)
+param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04)
+if ($IncludeF04) { $IncludeF03 = $true }
 if ($IncludeF03) { $IncludeF02 = $true }
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path $PSScriptRoot -Parent
@@ -81,6 +82,13 @@ try {
                 $summaryIdentifier = ($summary | ConvertFrom-Json).resourceId
                 node scripts/verify-f03-browser.mjs
                 if ($LASTEXITCODE -ne 0) { throw 'F03 browser verification failed.' }
+                if ($IncludeF04) {
+                    $concepts = & $javaPath cli/StudyPlannerCli.java extract-concepts $courseIdentifier $materialIdentifier
+                    if ($LASTEXITCODE -ne 0 -or $concepts -notmatch 'Protocol test fixture') { throw 'F04 CLI extraction failed.' }
+                    $conceptIdentifier = ($concepts | ConvertFrom-Json).resourceId
+                    node scripts/verify-f04-browser.mjs
+                    if ($LASTEXITCODE -ne 0) { throw 'F04 browser verification failed.' }
+                }
             }
         }
         Stop-Process -Id $backendProcess.Id
@@ -111,6 +119,13 @@ try {
             $cachedSummary = & $javaPath cli/StudyPlannerCli.java summarize $courseIdentifier $materialIdentifier
             if ($LASTEXITCODE -ne 0 -or ($cachedSummary | ConvertFrom-Json).resourceId -ne $summaryIdentifier) { throw 'Summary cache unexpectedly required a model call.' }
             Write-Output 'PASS: F03 CLI and saved-summary persistence after restart without a provider. Scripted fixture only; live AI quality not verified.'
+            if ($IncludeF04) {
+                $stored = & $javaPath cli/StudyPlannerCli.java concepts $courseIdentifier $materialIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($stored | ConvertFrom-Json).resourceId -ne $conceptIdentifier) { throw 'Saved concepts restart/offline retrieval failed.' }
+                $cached = & $javaPath cli/StudyPlannerCli.java extract-concepts $courseIdentifier $materialIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($cached | ConvertFrom-Json).resourceId -ne $conceptIdentifier) { throw 'Concept cache unexpectedly required a provider.' }
+                Write-Output 'PASS: F04 CLI and saved concepts survive restart and work with provider stopped.'
+            }
         }
     } finally { Pop-Location }
 } finally {

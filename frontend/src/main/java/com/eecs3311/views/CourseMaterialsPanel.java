@@ -136,7 +136,8 @@ public class CourseMaterialsPanel extends VerticalLayout {
                 Div actions = new Div(view, download);
                 actions.addClassName("material-actions");
                 Div row = new Div(new H3(material.fileName()), details, actions,
-                        new SummaryActions(api, course.courseId(), material, summaryExecutor, error::setText));
+                        new SummaryActions(api, course.courseId(), material, summaryExecutor, error::setText),
+                        new ConceptActions(api, course.courseId(), material, summaryExecutor, error::setText));
                 row.addClassName("material-row");
                 materials.add(row);
             }

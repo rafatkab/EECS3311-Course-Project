@@ -41,7 +41,7 @@ public final class AIEngine {
             body.put("stream", false);
             body.put(settings.tokenLimitField(), settings.maxOutputTokens());
             body.set("response_format", schema == null ? json.valueToTree(Map.of("type", "json_object"))
-                    : json.valueToTree(Map.of("type", "json_schema", "json_schema", Map.of("name", "document_summary", "strict", true, "schema", schema))));
+                    : json.valueToTree(Map.of("type", "json_schema", "json_schema", Map.of("name", "study_resource", "strict", true, "schema", schema))));
             body.set("messages", json.valueToTree(List.of(
                     Map.of("role", "system", "content", instruction + (schema == null ? "" : "\nRequired output JSON schema: " + schema)), Map.of("role", "user", "content", context))));
             var request = HttpRequest.newBuilder(endpoint).timeout(timeout)
@@ -63,7 +63,7 @@ public final class AIEngine {
                     throw new AiFailure(502, "The AI response was incomplete or refused. Try a suitable model or output limit.");
                 }
                 JsonNode content = choice.path("message").path("content");
-                if (!content.isTextual() || content.asText().isBlank()) throw new AiFailure(502, "The AI provider returned no summary content.");
+                if (!content.isTextual() || content.asText().isBlank()) throw new AiFailure(502, "The AI provider returned no generated content.");
                 long input = root.path("usage").path("prompt_tokens").asLong(-1);
                 long output = root.path("usage").path("completion_tokens").asLong(-1);
                 return new Completion(content.asText(), input, output);
@@ -71,7 +71,7 @@ public final class AIEngine {
             throw new AiFailure(504, "The AI provider timed out. Try again or use a faster model.");
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new AiFailure(503, "Summary generation was interrupted. No new summary was saved.");
+            throw new AiFailure(503, "AI generation was interrupted. No new resource was saved.");
         } catch (IOException exception) {
             throw new AiFailure(502, "Cannot reach the AI provider or read its response. Check that it is running and correctly configured.");
         } finally {

@@ -1,0 +1,50 @@
+// Scripted provider integration checks; model quality is checked separately with Ollama.
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+const require = createRequire(import.meta.url);
+const { chromium } = require('../frontend/target/browser-tools/node_modules/playwright-core');
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
+const page = await browser.newPage();
+page.setDefaultTimeout(25_000);
+const mode = async value => fetch('http://127.0.0.1:8092/mode', { method: 'POST', body: JSON.stringify({ mode: value }) });
+const calls = async () => (await (await fetch('http://127.0.0.1:8092/stats')).json()).calls;
+try {
+  await mode('valid');
+  await page.goto('http://localhost:8090');
+  await page.locator('#username input').fill(process.env.STUDY_USERNAME);
+  await page.locator('#password input').fill(process.env.STUDY_PASSWORD);
+  await page.locator('#sign-in').click();
+  await page.getByRole('button', { name: 'Open course CLI verification course', exact: true }).click();
+  const material = page.locator('.material-row').filter({ hasText: 'gui-notes.txt' });
+  await material.getByRole('button', { name: 'Extract Concepts', exact: true }).click();
+  await page.locator('[data-concepts-id]').waitFor();
+  assert.equal(await page.locator('.concept-item').count(), 1);
+  assert.ok((await page.locator('.concept-item').innerText()).includes('GUI lecture notes'));
+  const previousId = await page.locator('[data-concepts-id]').getAttribute('data-concepts-id');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  const before = await calls();
+  await material.getByRole('button', { name: 'Extract Concepts', exact: true }).click();
+  await page.locator('[data-concepts-id]').waitFor();
+  assert.equal(await calls(), before);
+  await mode('unavailable');
+  await page.getByRole('button', { name: 'Regenerate concepts', exact: true }).click();
+  await page.getByText('The AI provider rejected the request', { exact: false }).waitFor();
+  await material.getByRole('button', { name: 'View saved concepts', exact: true }).click();
+  await page.locator(`[data-concepts-id="${previousId}"]`).waitFor();
+  await mode('invalid');
+  await page.getByRole('button', { name: 'Regenerate concepts', exact: true }).click();
+  await page.getByText('The model returned invalid concept output', { exact: false }).waitFor();
+  await material.getByRole('button', { name: 'View saved concepts', exact: true }).click();
+  await page.locator(`[data-concepts-id="${previousId}"]`).waitFor();
+  await mode('valid');
+  await page.getByRole('button', { name: 'Regenerate concepts', exact: true }).click();
+  await page.locator(`[data-concepts-id]:not([data-concepts-id="${previousId}"])`).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'frontend/target/f04-concepts-mobile.png', fullPage: true });
+  assert.ok(await page.locator('.concept-item .summary-quote').count());
+  console.log('PASS: F04 browser saved concepts, cache, failed/invalid regeneration preservation, successful regeneration, and mobile dialog.');
+} catch (error) {
+  console.log(error.stack);
+  await page.screenshot({ path: 'frontend/target/f04-failure.png', fullPage: true });
+  process.exitCode = 1;
+} finally { await mode('valid'); await browser.close(); }

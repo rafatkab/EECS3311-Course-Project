@@ -46,3 +46,13 @@ The dialog shows the summary, its model, and supporting source quotations.
 `views/SummaryActions.java` runs requests in a bounded background executor configured
 by `config/UiTaskConfiguration.java`, so the UI can show progress without holding
 its session lock during inference. Summaries display as escaped plain text.
+
+## F04 concepts
+
+Each uploaded material also offers **Extract Concepts** and **View saved concepts**.
+`views/ConceptActions.java` displays a list of concept names, explanations, and
+source quotations, with **Regenerate concepts** in the dialog. It uses the same
+bounded background executor as summaries, displays progress/errors, and renders
+model text as escaped text. `course/ConceptSet.java` carries the API response;
+`CourseApi.extractConcepts/viewConcepts` call the backend's `/concepts` endpoints.
+The backend uses your existing Ollama settings; no frontend key is needed.

@@ -1,5 +1,5 @@
 # Prerequisites: packaged apps, running Ollama, downloaded model, Chrome/playwright-core.
-param([string] $Model = 'qwen2.5:1.5b')
+param([string] $Model = 'qwen2.5:1.5b', [switch] $IncludeF04)
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path $PSScriptRoot -Parent
 $javaPath = Join-Path $env:JAVA_HOME 'bin\java.exe'
@@ -58,6 +58,39 @@ try {
         foreach ($quote in $sectionedSummary.evidence) { if (-not $longSource.Contains($quote)) { throw 'Synthesized quotation does not match the source.' } }
         [System.IO.File]::WriteAllText((Join-Path $runPath 'sectioned-summary.json'), $sectionedJson)
         Write-Output 'PASS: real local Ollama section planning, section summaries, final synthesis, and exact evidence resolution.'
+        if ($IncludeF04) {
+            $conceptJson = & $javaPath cli/StudyPlannerCli.java extract-concepts $course.courseId $materials[0].materialId
+            if ($LASTEXITCODE -ne 0) { throw 'Real concept extraction failed.' }
+            $concepts = $conceptJson | ConvertFrom-Json
+            if ($concepts.model -ne $Model -or $concepts.concepts.Count -lt 1) { throw 'Invalid real concept result.' }
+            foreach ($concept in $concepts.concepts) {
+                foreach ($quote in $concept.evidence) { if (-not $source.Contains($quote)) { throw 'Concept quotation does not match the source.' } }
+            }
+            [System.IO.File]::WriteAllText((Join-Path $runPath 'concepts.json'), $conceptJson)
+            node scripts/verify-f04-live-browser.mjs
+            if ($LASTEXITCODE -ne 0) { throw 'Live concept browser verification failed.' }
+            $sectionedConceptJson = & $javaPath cli/StudyPlannerCli.java extract-concepts $course.courseId $sectioned[0].materialId
+            if ($LASTEXITCODE -ne 0) { throw 'Real concept consolidation failed.' }
+            $sectionedConcepts = $sectionedConceptJson | ConvertFrom-Json
+            if ($sectionedConcepts.sections -lt 2 -or $sectionedConcepts.modelCalls -lt 3) { throw 'Concepts did not use section planning and consolidation.' }
+            foreach ($concept in $sectionedConcepts.concepts) {
+                foreach ($quote in $concept.evidence) { if (-not $longSource.Contains($quote)) { throw 'Consolidated concept quotation does not match the source.' } }
+            }
+            [System.IO.File]::WriteAllText((Join-Path $runPath 'sectioned-concepts.json'), $sectionedConceptJson)
+            $biologySource = [System.IO.File]::ReadAllText((Join-Path $repoPath 'documentation/samples/f04-biology.txt'))
+            $biology = (& $javaPath cli/StudyPlannerCli.java upload $course.courseId documentation/samples/f04-biology.txt | Out-String) | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { throw 'Biology source upload failed.' }
+            $biologyJson = & $javaPath cli/StudyPlannerCli.java extract-concepts $course.courseId $biology[0].materialId
+            if ($LASTEXITCODE -ne 0) { throw 'Real biology concept extraction failed.' }
+            $biologyConcepts = $biologyJson | ConvertFrom-Json
+            if ($biologyConcepts.concepts.Count -lt 1) { throw 'No biology concepts returned.' }
+            foreach ($concept in $biologyConcepts.concepts) {
+                foreach ($quote in $concept.evidence) { if (-not $biologySource.Contains($quote)) { throw 'Biology quotation does not match the source.' } }
+            }
+            [System.IO.File]::WriteAllText((Join-Path $runPath 'biology-concepts.json'), $biologyJson)
+            Write-Output 'PASS: real Ollama extracted biology concepts with exact source quotations.'
+            Write-Output 'PASS: real Ollama concept CLI extraction, browser viewing/regeneration, multi-section consolidation, and exact source evidence.'
+        }
         Write-Output ('Live verification artifacts: ' + $runPath)
     } finally { Pop-Location }
 } finally {

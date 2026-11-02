@@ -34,6 +34,9 @@ public class StudyPlannerCli {
             System.out.println("       java cli/StudyPlannerCli.java summarize COURSE_ID MATERIAL_ID");
             System.out.println("       java cli/StudyPlannerCli.java summary COURSE_ID MATERIAL_ID (saved result)");
             System.out.println("       java cli/StudyPlannerCli.java regenerate-summary COURSE_ID MATERIAL_ID");
+            System.out.println("       java cli/StudyPlannerCli.java extract-concepts COURSE_ID MATERIAL_ID");
+            System.out.println("       java cli/StudyPlannerCli.java concepts COURSE_ID MATERIAL_ID (saved result)");
+            System.out.println("       java cli/StudyPlannerCli.java regenerate-concepts COURSE_ID MATERIAL_ID");
             System.out.println("Set STUDY_USERNAME (default student), STUDY_PASSWORD, and optionally BACKEND_URL.");
             System.out.println("If STUDY_PASSWORD is unset, an interactive console securely prompts for it.");
             return;
@@ -44,7 +47,7 @@ public class StudyPlannerCli {
             case "materials" -> args.length == 2;
             case "upload" -> args.length >= 3 && args.length <= 12;
             case "content" -> args.length == 3;
-            case "summarize", "summary", "regenerate-summary" -> args.length == 3;
+            case "summarize", "summary", "regenerate-summary", "extract-concepts", "concepts", "regenerate-concepts" -> args.length == 3;
             default -> false;
         };
         if (!valid) {
@@ -65,7 +68,7 @@ public class StudyPlannerCli {
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3))
                 .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)).build();
         HttpRequest.Builder request = request(base + "/api/courses", authorization);
-        if (java.util.Set.of("materials", "upload", "content", "summarize", "summary", "regenerate-summary").contains(args[0])) {
+        if (java.util.Set.of("materials", "upload", "content", "summarize", "summary", "regenerate-summary", "extract-concepts", "concepts", "regenerate-concepts").contains(args[0])) {
             String courseId = UUID.fromString(args[1]).toString();
             String url = base + "/api/courses/" + courseId + "/materials";
             if (args[0].equals("content")) url += "/" + UUID.fromString(args[2]) + "/content";
@@ -73,10 +76,14 @@ public class StudyPlannerCli {
                 url += "/" + UUID.fromString(args[2]) + "/summary";
                 if (args[0].equals("regenerate-summary")) url += "?regenerate=true";
             }
+            if (java.util.Set.of("extract-concepts", "concepts", "regenerate-concepts").contains(args[0])) {
+                url += "/" + UUID.fromString(args[2]) + "/concepts";
+                if (args[0].equals("regenerate-concepts")) url += "?regenerate=true";
+            }
             request = request(url, authorization);
             if (args[0].equals("content")) request.setHeader("Accept", "text/plain, application/json");
         }
-        if (java.util.Set.of("create", "upload", "summarize", "regenerate-summary").contains(args[0])) {
+        if (java.util.Set.of("create", "upload", "summarize", "regenerate-summary", "extract-concepts", "regenerate-concepts").contains(args[0])) {
             var tokenResponse = client.send(request(base + "/api/csrf", authorization).GET().build(), HttpResponse.BodyHandlers.ofString());
             check(tokenResponse);
             String token = tokenResponse.headers().firstValue("X-CSRF-TOKEN").orElseThrow();
@@ -85,7 +92,7 @@ public class StudyPlannerCli {
                     + ",\"startDate\":" + json(args[3]) + ",\"endDate\":" + json(args[4]) + "}";
                 request.header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(body));
-            } else if (args[0].equals("summarize") || args[0].equals("regenerate-summary")) {
+            } else if (java.util.Set.of("summarize", "regenerate-summary", "extract-concepts", "regenerate-concepts").contains(args[0])) {
                 request.timeout(Duration.ofSeconds(200)).header("X-CSRF-TOKEN", token).POST(HttpRequest.BodyPublishers.noBody());
             } else {
                 String boundary = "StudyPlanner" + UUID.randomUUID().toString().replace("-", "");

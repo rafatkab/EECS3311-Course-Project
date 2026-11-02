@@ -1,8 +1,10 @@
 package com.eecs3311.backend.course;
 
 import com.eecs3311.backend.material.LearningMaterial;
+import com.eecs3311.backend.resource.ConceptSet;
 import com.eecs3311.backend.ai.StudyAssistantFacade;
 import com.eecs3311.backend.resource.Summary;
+import com.eecs3311.backend.resource.StudyResource;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,6 +22,16 @@ public record Course(UUID courseId, UUID ownerId, String name, String descriptio
     public Summary generateStudyResource(LearningMaterial material, StudyAssistantFacade assistant) {
         if (!courseId.equals(material.courseId())) throw new IllegalArgumentException("The material does not belong to this course.");
         return assistant.summarize(material);
+    }
+
+    /** SD02 selects the requested concrete study resource through the facade. */
+    public StudyResource generateStudyResource(String type, LearningMaterial material, StudyAssistantFacade assistant) {
+        if (!courseId.equals(material.courseId())) throw new IllegalArgumentException("The material does not belong to this course.");
+        return switch (type) {
+            case "Summary" -> assistant.summarize(material);
+            case "ConceptSet" -> assistant.extractConcepts(material);
+            default -> throw new IllegalArgumentException("This resource type is not implemented.");
+        };
     }
 
     public Course {

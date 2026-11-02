@@ -102,7 +102,7 @@ section/call counts, and provider-reported tokens (`-1` means not reported).
 `ContentAgent`, the shared `AIEngine.getInstance()`, and `StudyResourceFactory` to
 create a `Summary` extending `StudyResource`. The repository persists the latest
 summary per material with a source hash. Failed generation never overwrites it.
-The simple factory currently has only the Summary product; other resource types
+The simple factory constructs Summary and ConceptSet; other resource types
 are not implemented. Strategy and Observer remain future work.
 
 The agent splits up to 32,000 characters into approximately 6000-character sections,
@@ -131,3 +131,22 @@ Errors: insufficient content 400, oversized input 413, concurrent generation 409
 rate/busy limits 429, invalid provider output/unavailable provider 502, configuration
 or provider authentication 503, timeout 504. Network/provider failures are not retried
 automatically; repeated invalid structured output fails without saving.
+
+## F04 concept extraction
+
+`POST /api/courses/{id}/materials/{materialId}/concepts` extracts or returns the
+source-matching saved set; add `?regenerate=true` for a replacement. `GET` at the
+same path reads saved concepts without a model call. Authentication, ownership,
+CSRF, input/provider limits, and safe errors match F03.
+
+`StudyAssistantFacade.extractConcepts` delegates section planning, extraction,
+consolidation, evidence verification, and one bounded repair to `ContentAgent`.
+`StudyResourceFactory` creates a `ConceptSet` extending `StudyResource` from typed
+`ConceptDraft` data. Concepts contain `name`, `description`, and exact source
+`evidence`; the set includes model/usage/source metadata. Normalized duplicate
+names and repeated quotation IDs are merged. Names may paraphrase the source. Evidence options cover readable source sentences, including long-sentence tails; dense lists use contiguous grouped windows instead of sampling. Invalid IDs, malformed/empty output, and invalid field lengths are rejected. The single repair request includes the specific failure and a bounded previous response as untrusted user data. `ConceptSetService` and
+`JdbcConceptSetRepository` persist the latest set in `concept_sets`, atomically
+replacing only successful results. Existing databases gain this table on startup;
+courses, materials, and summaries remain intact. No additional dependency or
+provider configuration is required. Concurrency guards are per material and
+resource type; all AI calls share AIEngine's two-call limit.

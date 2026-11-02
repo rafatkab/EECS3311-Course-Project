@@ -88,6 +88,23 @@ public class CourseApi {
         } catch (IOException exception) { throw new ApiFailure("Could not read the saved summary."); }
     }
 
+    public ConceptSet extractConcepts(UUID courseId, UUID materialId, boolean regenerate) {
+        try {
+            String token;
+            synchronized (this) { token = csrfToken(); }
+            var response = send(request("/api/courses/" + courseId + "/materials/" + materialId + "/concepts?regenerate=" + regenerate)
+                    .timeout(Duration.ofSeconds(200)).header("X-CSRF-TOKEN", token)
+                    .POST(HttpRequest.BodyPublishers.noBody()).build());
+            return mapper.readValue(response.body(), ConceptSet.class);
+        } catch (IOException exception) { throw new ApiFailure("Could not read the concepts response. Try View saved concepts before extracting again."); }
+    }
+
+    public ConceptSet viewConcepts(UUID courseId, UUID materialId) {
+        try {
+            return mapper.readValue(send(request("/api/courses/" + courseId + "/materials/" + materialId + "/concepts").GET().build()).body(), ConceptSet.class);
+        } catch (IOException exception) { throw new ApiFailure("Could not read the saved concepts."); }
+    }
+
     // Keep token acquisition and POST together: concurrent first uploads must not
     // create different sessions and overwrite each other's CSRF cookie.
     public synchronized void uploadMaterial(UUID courseId, String filename, byte[] bytes) {

@@ -1,8 +1,8 @@
 # Stage 2 - F03 Document Summarization
 
 References: F03, UC-03, SD02 summary branch, Stage 1 Task 4 F03.
-Only implemented classes and relationships are shown. Other resource products,
-agents, Strategy and Observer are future work.
+This F03 view shows implemented summary relationships. F04 adds ConceptSet to the
+same factory and agent; see stage2-f04.md. Other agents, Strategy and Observer remain future work.
 
 ```mermaid
 classDiagram

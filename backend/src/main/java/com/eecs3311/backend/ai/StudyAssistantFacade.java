@@ -1,6 +1,7 @@
 package com.eecs3311.backend.ai;
 
 import com.eecs3311.backend.material.LearningMaterial;
+import com.eecs3311.backend.resource.ConceptSet;
 import com.eecs3311.backend.resource.StudyResourceFactory;
 import com.eecs3311.backend.resource.Summary;
 import org.springframework.stereotype.Service;
@@ -17,5 +18,10 @@ public class StudyAssistantFacade {
     public Summary summarize(LearningMaterial material) {
         var draft = contentAgent.summarize(material);
         return (Summary) resources.createResource("Summary", material, draft);
+    }
+
+    public ConceptSet extractConcepts(LearningMaterial material) {
+        var draft = contentAgent.extractConcepts(material);
+        return (ConceptSet) resources.createResource("ConceptSet", material, draft);
     }
 }

@@ -97,7 +97,7 @@ error and exit with code 1. CLI and GUI use the same validation, ownership, and 
 `backend/config.local.properties.example` contains placeholders only. Its local
 copy and all `.env*` files (except `.env.example`) are ignored by Git. Maven and
 Spring Boot do not automatically load `.env.local`. F01/F02 do not need a model;
-F03 uses your configured local Ollama model. Backend-only environment overrides
+F03/F04 use your configured local Ollama model. Backend-only environment overrides
 are `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, and `LLM_TOKEN_LIMIT_FIELD`.
 
 ```powershell
@@ -108,7 +108,7 @@ cd backend
 ```
 
 The living [Stage 2 report (PDF)](documentation/reports/stage2-report.pdf) and its
-[editable source](documentation/reports/stage2-report.html) track F01–F03,
+[editable source](documentation/reports/stage2-report.html) track F01–F04,
 remaining requirements, architecture changes, verification, and demonstration work.
 
 For optional end-to-end verification on Windows, build both packages above, then
@@ -131,3 +131,28 @@ then stops its own servers. `CHROME_PATH` overrides the browser executable locat
 The temporary browser dependency is not part of either application's runtime.
 F03 fixture checks also use port 8092. The fixture is confined to `scripts/fixtures/`
 and is never a production fallback. They test integration, not live model quality.
+
+## F04 — Concept extraction
+
+In an open course, choose **Extract Concepts** under a learning material. The list
+shows important concepts, explanations, and exact supporting source quotations.
+**View saved concepts** reopens the saved set; **Regenerate concepts** explicitly
+replaces it after successful generation. Failed regeneration preserves the old set.
+The agent extracts source sections and consolidates longer documents, using the
+same local Ollama configuration as F03. It accepts 40–32,000 characters and returns
+up to 10 concepts. Concept names may paraphrase the material; quotations are resolved from source-excerpt IDs. Normalized duplicate names are merged; semantic duplicates and
+inaccurate explanations can still occur, so review the source.
+
+```powershell
+java cli/StudyPlannerCli.java extract-concepts COURSE_ID MATERIAL_ID
+java cli/StudyPlannerCli.java concepts COURSE_ID MATERIAL_ID
+java cli/StudyPlannerCli.java regenerate-concepts COURSE_ID MATERIAL_ID
+# Scripted integration checks, including F01–F03 regression:
+.\scripts\verify-f01.ps1 -IncludeF04
+# Real Ollama verification with safe samples, including multi-section extraction:
+.\scripts\verify-f03-live.ps1 -IncludeF04
+```
+
+Extraction targets one uploaded document (or a section uploaded as its own file).
+It does not add course-section management or whole-course extraction. See the
+[F04 UML and sequence](documentation/diagrams/stage2-f04.md) for the implemented flow.

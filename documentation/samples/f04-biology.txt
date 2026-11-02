@@ -1,0 +1,11 @@
+Cell biology study notes
+
+Cells transform energy to carry out work. During cellular respiration, cells break down glucose and transfer some of its chemical energy into ATP. ATP can then supply energy for processes such as active transport. Respiration does not create energy; it transforms energy stored in molecules.
+
+Photosynthesis uses light energy to build sugars from carbon dioxide and water. Chloroplasts contain chlorophyll, which absorbs light. The sugars produced can be used in cellular respiration or stored for later use. Photosynthesis and respiration are related processes but perform different roles.
+
+Cell membranes control the movement of substances. Diffusion is the net movement of particles from a region of higher concentration to a region of lower concentration. Osmosis describes the movement of water across a selectively permeable membrane. Active transport moves substances against a concentration gradient and requires energy.
+
+Enzymes are biological catalysts that speed up chemical reactions by lowering activation energy. An enzyme's active site interacts with its substrate. Temperature and pH can affect enzyme activity, and extreme conditions can change the enzyme's structure. Enzymes are not consumed by the reactions they catalyze.
+
+For revision, distinguish energy transformations from transport processes. Compare diffusion and active transport by their direction of movement and their energy requirements. Explain how photosynthesis supplies sugars that can later provide energy through respiration.
