@@ -37,6 +37,35 @@ public class CourseApi {
             throw new ApiFailure("The backend returned an unreadable response.");
         }
     }
+    public PlanningData.State planningState(UUID course) {
+        try { return mapper.readValue(send(request("/api/courses/" + course + "/planning").GET().build()).body(), PlanningData.State.class); }
+        catch (IOException exception) { throw new ApiFailure("Could not read study planning data."); }
+    }
+    private void planningWrite(String path, Object body, String method) {
+        try {
+            String token; synchronized (this) { token = csrfToken(); }
+            send(request(path).timeout(Duration.ofSeconds(250)).header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
+                    .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body))).build());
+        } catch (IOException exception) { throw new ApiFailure("Could not prepare study planning request. Refresh saved data before retrying."); }
+    }
+    public void saveStudyProfile(PlanningData.Profile profile) { planningWrite("/api/study-profile", profile, "PUT"); }
+    public void generateStudyPlan(UUID course, PlanningData.Request request) { planningWrite("/api/courses/" + course + "/study-plan", request, "POST"); }
+    public void addCalendarEvent(UUID course, PlanningData.EventInput event) { planningWrite("/api/courses/" + course + "/calendar-events", event, "POST"); }
+    public void removeCalendarEvent(UUID course, UUID event) { planningWrite("/api/courses/" + course + "/calendar-events/" + event, null, "DELETE"); }
+    public ChatTurn askQuestion(UUID courseId, String question) {
+        try {
+            String token;
+            synchronized (this) { token = csrfToken(); }
+            return mapper.readValue(send(request("/api/courses/" + courseId + "/chat").timeout(Duration.ofSeconds(250))
+                    .header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(java.util.Map.of("question", question)))).build()).body(), ChatTurn.class);
+        } catch (IOException exception) { throw new ApiFailure("Could not read the answer. Refresh chat history before retrying."); }
+    }
+    public List<ChatTurn> chatHistory(UUID courseId, Long before) {
+        try {
+            return mapper.readValue(send(request("/api/courses/" + courseId + "/chat" + (before == null ? "" : "?before=" + before)).GET().build()).body(), new TypeReference<>() { });
+        } catch (IOException exception) { throw new ApiFailure("Could not read the course chat history."); }
+    }
     public synchronized Course createCourse(CreateCourseRequest course) {
         var token = csrfToken();
         try {

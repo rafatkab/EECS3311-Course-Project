@@ -1,6 +1,8 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04)
+param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06)
+if ($IncludeF06) { $IncludeF05 = $true }
+if ($IncludeF05) { $IncludeF04 = $true }
 if ($IncludeF04) { $IncludeF03 = $true }
 if ($IncludeF03) { $IncludeF02 = $true }
 $ErrorActionPreference = 'Stop'
@@ -88,6 +90,25 @@ try {
                     $conceptIdentifier = ($concepts | ConvertFrom-Json).resourceId
                     node scripts/verify-f04-browser.mjs
                     if ($LASTEXITCODE -ne 0) { throw 'F04 browser verification failed.' }
+                    if ($IncludeF05) {
+                        $answer = & $javaPath cli/StudyPlannerCli.java ask $courseIdentifier 'What do the notes say about Repository patterns?'
+                        if ($LASTEXITCODE -ne 0 -or $answer -notmatch 'Protocol test fixture') { throw 'F05 CLI question failed.' }
+                        $turnIdentifier = ($answer | ConvertFrom-Json).turnId
+                        node scripts/verify-f05-browser.mjs
+                        if ($LASTEXITCODE -ne 0) { throw 'F05 browser verification failed.' }
+                        if ($IncludeF06) {
+                            $savedProfile = & $javaPath cli/StudyPlannerCli.java save-profile documentation/samples/study-profile.json
+                            if ($LASTEXITCODE -ne 0) { throw 'F06 CLI profile save failed.' }
+                            $planFrom = (Get-Date).Date.AddDays(7)
+                            while ($planFrom.DayOfWeek -ne [DayOfWeek]::Monday) { $planFrom = $planFrom.AddDays(1) }
+                            $requestPath = Join-Path $runPath 'plan-request.json'
+                            [IO.File]::WriteAllText($requestPath, (@{startDate=$planFrom.ToString('yyyy-MM-dd');endDate=$planFrom.AddDays(13).ToString('yyyy-MM-dd');sessionMinutes=45;sessionCount=4;assessmentNotes='Practice course design patterns.'} | ConvertTo-Json))
+                            $plan = & $javaPath cli/StudyPlannerCli.java generate-plan $courseIdentifier $requestPath
+                            if ($LASTEXITCODE -ne 0 -or $plan -notmatch 'sessions') { throw 'F06 CLI generation failed.' }
+                            node scripts/verify-f06-browser.mjs
+                            if ($LASTEXITCODE -ne 0) { throw 'F06 browser verification failed.' }
+                        }
+                    }
                 }
             }
         }
@@ -125,6 +146,17 @@ try {
                 $cached = & $javaPath cli/StudyPlannerCli.java extract-concepts $courseIdentifier $materialIdentifier
                 if ($LASTEXITCODE -ne 0 -or ($cached | ConvertFrom-Json).resourceId -ne $conceptIdentifier) { throw 'Concept cache unexpectedly required a provider.' }
                 Write-Output 'PASS: F04 CLI and saved concepts survive restart and work with provider stopped.'
+                if ($IncludeF05) {
+                    $history = & $javaPath cli/StudyPlannerCli.java history $courseIdentifier
+                    if ($LASTEXITCODE -ne 0 -or $history -notmatch $turnIdentifier) { throw 'F05 chat history restart/offline retrieval failed.' }
+                    Write-Output 'PASS: F05 CLI and chat history survive restart without a provider.'
+                    if ($IncludeF06) {
+                        $state = (& $javaPath cli/StudyPlannerCli.java plan $courseIdentifier | Out-String) | ConvertFrom-Json
+                        if ($LASTEXITCODE -ne 0 -or $state.plan.sessions.Count -ne 4 -or $state.profile.availableStudyTime -ne 180) { throw 'F06 profile/plan restart persistence failed.' }
+                        if (@($state.events | Where-Object { $_.type -eq 'STUDY' -and $_.courseId -eq $courseIdentifier }).Count -ne 4) { throw 'F06 calendar restart persistence failed.' }
+                        Write-Output 'PASS: F06 CLI profile, saved plan, and synchronized calendar persist after restart without a model.'
+                    }
+                }
             }
         }
     } finally { Pop-Location }

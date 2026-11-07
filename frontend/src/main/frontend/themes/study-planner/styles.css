@@ -58,3 +58,11 @@ body { margin: 0; }
 
 .concept-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lumo-space-s); margin-top: var(--lumo-space-s); }
 .concept-item { padding: var(--lumo-space-m) 0; border-bottom: 1px solid var(--lumo-contrast-10pct); overflow-wrap: anywhere; }
+
+.course-chat { width: 100%; min-width: 0; max-width: 100%; padding: var(--lumo-space-l); box-sizing: border-box; border: 1px solid var(--lumo-contrast-10pct); border-radius: var(--lumo-border-radius-l); background: var(--lumo-base-color); }
+.chat-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--lumo-space-s); }
+.chat-turn { min-width: 0; max-width: 100%; border-bottom: 1px solid var(--lumo-contrast-10pct); padding: var(--lumo-space-m) 0; overflow-wrap: anywhere; }
+.study-planning { width: 100%; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.planning-fields, .availability-window { display: flex; flex-wrap: wrap; align-items: end; gap: var(--lumo-space-s); margin: var(--lumo-space-s) 0; }
+.study-planning vaadin-text-field, .study-planning vaadin-integer-field, .study-planning vaadin-date-picker, .study-planning vaadin-time-picker, .study-planning vaadin-select { max-width: 100%; }
+.study-session, .planning-event { border-bottom: 1px solid var(--lumo-contrast-10pct); padding: var(--lumo-space-s) 0; }

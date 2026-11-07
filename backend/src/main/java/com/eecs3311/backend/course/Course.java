@@ -1,6 +1,13 @@
 package com.eecs3311.backend.course;
+import com.eecs3311.backend.planning.StudyPlan;
+import com.eecs3311.backend.planning.PlanRequest;
+import com.eecs3311.backend.planning.Calendar;
+import com.eecs3311.backend.planning.StudyProfile;
 
 import com.eecs3311.backend.material.LearningMaterial;
+import com.eecs3311.backend.chat.CourseChat;
+import com.eecs3311.backend.ai.ContentAgent;
+import java.util.List;
 import com.eecs3311.backend.resource.ConceptSet;
 import com.eecs3311.backend.ai.StudyAssistantFacade;
 import com.eecs3311.backend.resource.Summary;
@@ -13,6 +20,15 @@ import java.util.UUID;
 /** Immutable course owned by one student; dates are inclusive. */
 public record Course(UUID courseId, UUID ownerId, String name, String description,
                      LocalDate startDate, LocalDate endDate, Instant createdAt) {
+    public StudyPlan generateStudyResource(StudyProfile profile,
+            Calendar calendar, PlanRequest request, List<LearningMaterial> materials, StudyAssistantFacade assistant) {
+        return assistant.generateStudyPlan(this, profile, calendar, request, materials);
+    }
+    public ContentAgent.AnswerDraft askQuestion(String question,
+            CourseChat chat, List<LearningMaterial> materials, StudyAssistantFacade assistant) {
+        if (!courseId.equals(chat.course().courseId())) throw new IllegalArgumentException("The chat does not belong to this course.");
+        return chat.askQuestion(question, materials, assistant);
+    }
     /** Stage 1 F02: create a material belonging to this course. */
     public LearningMaterial addMaterial(String fileName, String fileType, long sizeBytes, String text) {
         return new LearningMaterial(UUID.randomUUID(), courseId, fileName, fileType, sizeBytes, Instant.now(), text);

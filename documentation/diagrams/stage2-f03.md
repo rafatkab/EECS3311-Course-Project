@@ -2,7 +2,7 @@
 
 References: F03, UC-03, SD02 summary branch, Stage 1 Task 4 F03.
 This F03 view shows implemented summary relationships. F04 adds ConceptSet to the
-same factory and agent; see stage2-f04.md. Other agents, Strategy and Observer remain future work.
+same factory and agent; see stage2-f04.md. F06 adds PlanningAgent and the StudyPlan/Calendar Observer; see stage2-f06.md. Strategy remains future work.
 
 ```mermaid
 classDiagram

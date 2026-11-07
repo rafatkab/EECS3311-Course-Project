@@ -1,0 +1,11 @@
+{
+  "availableStudyTime": 180,
+  "zoneId": "America/Toronto",
+  "studyPreferences": "Use worked examples and practice questions.",
+  "studyHabits": "I prefer focused evening sessions with time to review mistakes.",
+  "availability": [
+    {"day": "MONDAY", "start": "18:00", "end": "20:00"},
+    {"day": "WEDNESDAY", "start": "18:00", "end": "20:00"},
+    {"day": "FRIDAY", "start": "18:00", "end": "20:00"}
+  ]
+}

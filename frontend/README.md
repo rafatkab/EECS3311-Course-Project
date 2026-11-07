@@ -56,3 +56,28 @@ bounded background executor as summaries, displays progress/errors, and renders
 model text as escaped text. `course/ConceptSet.java` carries the API response;
 `CourseApi.extractConcepts/viewConcepts` call the backend's `/concepts` endpoints.
 The backend uses your existing Ollama settings; no frontend key is needed.
+## F05 course chat
+
+`views/CourseChatPanel.java` adds the course question box, saved history, progress,
+errors, and expandable source quotations. `CourseApi.askQuestion/chatHistory` use
+the same authenticated backend API as the CLI. Requests run in the existing bounded
+background executor. Failed questions stay in the input; complete answers are saved
+by the backend. History loads in pages of 50 with an older-messages button. Model
+text is rendered as escaped text, and source viewing uses the authenticated client.
+Chat answers preserve line breaks, wrap long lines and URLs, and expand vertically. Critical wrapping and width limits are applied directly to the components so missing or stale custom theme rules cannot turn an answer into a line extending beyond the screen. The F05 browser check compares full saved answer text and the final sentence at desktop and phone widths, including with the custom text class removed.
+
+## F06 study planning
+
+Expand **Study plan and availability** in a course. Save the shared weekly profile,
+add blocking events or quiz/exam dates, and choose plan dates/session count/duration.
+**Generate study plan** requests a new plan; **Saved study plan** displays priorities,
+local session times, instructions, and expandable source quotations. Regeneration
+replaces this course's generated calendar entries. Profile or event changes affect
+the next generation, and failed requests preserve entered data and the saved plan.
+
+`views/StudyPlanningPanel.java` uses `course/PlanningData.java` records and `CourseApi`
+planning methods. Calls use the existing background executor and show progress/errors;
+form interaction is temporarily disabled during a request. Current form values are
+preserved on failure. Dates display in the saved plan's time zone. Busy/quiz/exam
+inputs use the saved profile's time zone. Other courses' stored events also block time.
+The full F10 calendar interface remains pending.

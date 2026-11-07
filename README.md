@@ -108,7 +108,7 @@ cd backend
 ```
 
 The living [Stage 2 report (PDF)](documentation/reports/stage2-report.pdf) and its
-[editable source](documentation/reports/stage2-report.html) track F01–F04,
+[editable source](documentation/reports/stage2-report.html) track F01–F06 and UC-11,
 remaining requirements, architecture changes, verification, and demonstration work.
 
 For optional end-to-end verification on Windows, build both packages above, then
@@ -156,3 +156,71 @@ java cli/StudyPlannerCli.java regenerate-concepts COURSE_ID MATERIAL_ID
 Extraction targets one uploaded document (or a section uploaded as its own file).
 It does not add course-section management or whole-course extraction. See the
 [F04 UML and sequence](documentation/diagrams/stage2-f04.md) for the implemented flow.
+## F05 — Questions about course materials
+
+Open a course and use **Course chat**. Enter a question and click **Send question**.
+Answers use excerpts retrieved from that course's uploaded text. Expand a source
+to read its quotation or select **View source text** to inspect the document.
+**Refresh chat** reloads saved exchanges; **Load older messages** loads history
+before the displayed page. Failed requests preserve your input and saved messages.
+You can also ask "Tell me about this course" for an overview based on a selection of uploaded passages. Specific questions with no matching passages are declined without a model call. The model can also decline when matching excerpts do not answer the question.
+
+```powershell
+java cli/StudyPlannerCli.java ask COURSE_ID "How does active transport differ from diffusion?"
+java cli/StudyPlannerCli.java history COURSE_ID
+java cli/StudyPlannerCli.java history COURSE_ID BEFORE_SEQUENCE
+.\scripts\verify-f01.ps1 -IncludeF05
+.\scripts\verify-f05-live.ps1
+```
+
+F05 uses the existing backend Ollama configuration. Questions allow 1000 characters;
+chat searches up to 50 files and 1,000,000 extracted characters per course. It sends up to
+six matching passages and short excerpts from two recent exchanges to the model. Word-based
+retrieval can miss synonyms or relevant information; include topic names in follow-ups.
+Source quotations identify the supplied text but do not guarantee factual accuracy.
+See [F05 classes and sequence](documentation/diagrams/stage2-f05.md).
+Chat answers that stop at an introduction or empty list item get one correction attempt before saving. To verify the reported assignment-PDF question with real Ollama, run scripts/verify-f05-completeness.ps1.
+
+## F06 — Personalized study plans
+
+Open a course and expand **Study plan and availability**:
+
+1. Save your **study profile**: weekly study minutes, time zone, preferences, habits,
+   and weekly availability windows. This profile is shared across your courses.
+2. Add any **BUSY**, **EXAM**, or **QUIZ** events. GUI event times use your saved
+   profile's time zone. The API/CLI accept UTC timestamps.
+3. Choose the plan dates, session duration, and number of sessions. Optionally enter
+   previous assessment results or topics you find difficult, then click **Generate study plan**.
+4. Open **Saved study plan** to see priorities, scheduled sessions, activities, and sources.
+
+The AI chooses topics and activities; Java schedules the times. Sessions avoid all
+your stored events, share one weekly budget across courses, and finish before the
+first upcoming quiz/exam in the chosen period. Past exams are not deadlines for new
+sessions. Regeneration replaces this course's old study events through the Observer
+pattern. Failed generation keeps the previous plan and calendar. Profile/calendar
+changes take effect on the next generation. Saved data remains readable with Ollama offline.
+
+```powershell
+java cli/StudyPlannerCli.java save-profile documentation/samples/study-profile.json
+java cli/StudyPlannerCli.java profile
+# Edit the sample plan dates to fit your course and be today or later:
+java cli/StudyPlannerCli.java generate-plan COURSE_ID documentation/samples/study-plan-request.json
+java cli/StudyPlannerCli.java plan COURSE_ID
+# Edit the sample event timestamp/title before adding it:
+java cli/StudyPlannerCli.java add-event COURSE_ID documentation/samples/study-busy-event.json
+java cli/StudyPlannerCli.java events COURSE_ID 2026-11-09T00:00:00Z 2026-11-23T00:00:00Z
+java cli/StudyPlannerCli.java remove-event COURSE_ID EVENT_ID
+.\scripts\verify-f01.ps1 -IncludeF06
+.\scripts\verify-f06-live.ps1
+```
+
+Limits: 1–30 sessions, 15–180 minutes each in 15-minute increments, over 1–56 days
+within the course dates. Weekly availability windows cannot overlap. Plans use up
+to 50 materials / 1,000,000 extracted characters, with six source excerpts and at
+most two model calls. Review AI advice against the source; citations do not prove
+recommendation quality. No additional AI configuration or dependency is needed.
+
+F06 includes UC-11 profile maintenance and the calendar support needed for scheduling.
+The full F10 calendar interface and automatic quiz-result integration remain pending;
+assessment notes are entered manually until F08/F09 exist. See the
+[F06 UML and sequence](documentation/diagrams/stage2-f06.md).

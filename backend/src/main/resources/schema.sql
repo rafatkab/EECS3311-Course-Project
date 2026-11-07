@@ -52,3 +52,42 @@ CREATE TABLE IF NOT EXISTS concept_sets (
     output_tokens BIGINT NOT NULL,
     source_hash CHAR(64) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS course_chat_turns (
+    turn_id UUID PRIMARY KEY,
+    sequence BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    question VARCHAR(1000) NOT NULL,
+    answer CLOB NOT NULL,
+    answerable BOOLEAN NOT NULL,
+    citations CLOB NOT NULL,
+    model VARCHAR(255) NOT NULL,
+    model_calls INT NOT NULL,
+    input_tokens BIGINT NOT NULL,
+    output_tokens BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS chat_course_sequence ON course_chat_turns(course_id, sequence);
+
+CREATE TABLE IF NOT EXISTS study_profiles (
+    owner_id UUID PRIMARY KEY,
+    profile_json CLOB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS study_plans (
+    resource_id UUID PRIMARY KEY,
+    owner_id UUID NOT NULL,
+    course_id UUID NOT NULL UNIQUE REFERENCES courses(course_id) ON DELETE CASCADE,
+    plan_json CLOB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS calendar_events (
+    event_id UUID PRIMARY KEY,
+    owner_id UUID NOT NULL,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    plan_id UUID REFERENCES study_plans(resource_id) ON DELETE CASCADE,
+    type VARCHAR(12) NOT NULL,
+    title VARCHAR(120) NOT NULL,
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT valid_event_times CHECK (end_time > start_time)
+);
+CREATE INDEX IF NOT EXISTS calendar_owner_time ON calendar_events(owner_id, start_time, end_time);

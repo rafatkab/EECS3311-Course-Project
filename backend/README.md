@@ -102,8 +102,8 @@ section/call counts, and provider-reported tokens (`-1` means not reported).
 `ContentAgent`, the shared `AIEngine.getInstance()`, and `StudyResourceFactory` to
 create a `Summary` extending `StudyResource`. The repository persists the latest
 summary per material with a source hash. Failed generation never overwrites it.
-The simple factory constructs Summary and ConceptSet; other resource types
-are not implemented. Strategy and Observer remain future work.
+The simple factory constructs Summary, ConceptSet, and StudyPlan; other resource types
+are not implemented. Strategy remains future work; F06 implements Observer for study-plan calendar synchronization.
 
 The agent splits up to 32,000 characters into approximately 6000-character sections,
 summarizes each, and synthesizes multiple sections. The model selects numbered
@@ -150,3 +150,69 @@ replacing only successful results. Existing databases gain this table on startup
 courses, materials, and summaries remain intact. No additional dependency or
 provider configuration is required. Concurrency guards are per material and
 resource type; all AI calls share AIEngine's two-call limit.
+## F05 course chat
+
+`POST /api/courses/{id}/chat` accepts `{"question":"..."}` with the usual authentication
+and CSRF token. `GET` returns the latest 50 complete turns in chronological order;
+`?before=SEQUENCE` returns older turns. All reads and writes check course ownership.
+
+`Course.askQuestion` → `CourseChat.askQuestion` → `StudyAssistantFacade.answerQuestion`
+→ `ContentAgent.answerQuestion` uses the existing singleton AIEngine. The agent uses
+`CourseContextRetriever` to rank 700-character passages using weighted word matches and common plural variants
+and recent question topics, and sends up to six matching passages. Related follow-ups can include bounded recent conversation; new topics omit earlier answers.
+This implements lexical retrieval followed by generation, without external search,
+embeddings, LangChain, or new dependencies. Limits: 1–1000 characters per question,
+50 materials and 1,000,000 extracted characters per course, two provider calls
+(including one output repair), each using the configured timeout. Other failures are
+not retried automatically. All model calls share the existing concurrency limit.
+
+`ChatService`, `ChatRepository`, and `JdbcChatRepository` store each completed exchange
+as one row in `course_chat_turns`. Citations retain material ID, filename, original
+text offsets, and exact source text. Failed requests leave history unchanged;
+unsupported questions save a clear insufficient-context reply with no citations. Broad overview requests use passages spread across the course materials even without matching keywords. For a specific question, no matching passages means no model call: model is course-search and token/call counts are zero. Recent topics can help generic follow-ups but do not override a new unrelated topic.
+The schema adds the table without deleting existing data. History is readable with
+the model offline. The model can still make factual or citation-relevance errors.
+ChatAnswerValidator rejects obvious unfinished introductions and empty list markers before saving an answer. The agent requests one complete replacement; repeated failure leaves saved history unchanged. Valid short answers are accepted. Run scripts/verify-f05-completeness.ps1 from the repository root to check the Stage 2 PDF question against real Ollama through the CLI and browser.
+
+## F06 planning and UC-11 profile
+
+- `GET /api/study-profile`: the authenticated student's profile, or JSON null.
+- `PUT /api/study-profile`: save the fields shown in `documentation/samples/study-profile.json`.
+- `GET /api/courses/{id}/planning`: profile, latest course plan, and the student's events
+  from the previous seven days through the next 366 days. The plan retains its own profile snapshot.
+- `POST /api/courses/{id}/study-plan`: generate a replacement using `startDate`, `endDate`,
+  `sessionMinutes`, `sessionCount`, and optional `assessmentNotes`.
+- `POST /api/courses/{id}/calendar-events`: add a manual BUSY/EXAM/QUIZ event with title,
+  `startTime`, and `endTime` (UTC instants). Manual events last at most seven days.
+- `DELETE /api/courses/{id}/calendar-events/{eventId}`: remove an owned manual event.
+  Generated sessions are replaced through plan regeneration.
+- `GET /api/courses/{id}/calendar-events?from=INSTANT&to=INSTANT`: list the student's
+  events in a range of at most 366 days. Events from other owned courses block scheduling too.
+
+All course endpoints check ownership; every write requires CSRF protection. Availability
+is 1–28 non-overlapping day/start/end windows, plus a weekly minute budget that fits
+within them. Preferences/habits are required (1000 characters each); time zones use
+IANA IDs. Profile update methods return validated immutable values. Plan dates must
+fit the course and be today or later in the profile time zone. Durations are 15–180
+minutes in 15-minute increments, counts 1–30, periods at most 56 days, assessment
+notes at most 2000 characters. Limits for materials match F05.
+
+`Course.generateStudyResource` → `StudyAssistantFacade.generateStudyPlan` →
+`PlanningAgent.generateStudyPlan` uses course excerpts, the profile, manually supplied
+assessment notes, and upcoming dates. The agent validates structured recommendations
+and exact source IDs, with one correction attempt. `StudyScheduler` deterministically
+allocates future slots and checks real elapsed durations, weekly budgets, other-course
+study sessions, busy events, and the earliest upcoming quiz/exam deadline.
+
+`StudyResourceFactory` creates a course-wide `StudyPlan` with `StudySession` records.
+`StudyPlan` implements `ScheduleSubject`; `Calendar` implements `ScheduleObserver`.
+`PlanPersistence.save` saves the latest plan, attaches the calendar, and calls
+`notifyObservers`; `Calendar.update` replaces its generated events. Both writes share
+one short transaction, and a failure rolls back both. No DB transaction is held during
+model generation. `PlanningLock` coordinates profile/event changes and generation for
+the same owner, including plans from different courses; competing writes receive 409.
+
+H2 adds `study_profiles`, `study_plans`, and `calendar_events` on startup without deleting
+existing data. The full F10 calendar UI, Course/Quiz subjects, and automatic assessment
+integration remain future work. This feature uses Facade, Singleton, Simple Factory,
+and Observer; it adds no application dependencies or model settings.

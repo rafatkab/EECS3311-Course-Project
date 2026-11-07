@@ -99,8 +99,11 @@ public class CourseMaterialsPanel extends VerticalLayout {
         toolbar.expand(count);
         toolbar.addClassName("course-toolbar");
         materials.addClassName("material-list");
+        var planning = new com.vaadin.flow.component.details.Details("Study plan and availability", new StudyPlanningPanel(api, course, summaryExecutor));
+        planning.setWidthFull(); planning.getStyle().set("min-width", "0").set("max-width", "100%");
         add(backButton, label, new H1(course.name()), new Paragraph(course.description()), dates,
-                uploadPanel, error, result, toolbar, materials);
+                planning,
+                new CourseChatPanel(api, course.courseId(), summaryExecutor), uploadPanel, error, result, toolbar, materials);
         refreshMaterials();
     }
 

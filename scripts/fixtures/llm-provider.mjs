@@ -28,12 +28,21 @@ const server = http.createServer(async (request, response) => {
     // A delay makes the real asynchronous UI progress state observable.
     await new Promise(resolve => setTimeout(resolve, 250));
     const conceptRequest = body.response_format?.json_schema?.schema?.properties?.concepts;
-    const sourceExcerpt = JSON.parse(body.messages[1].content).evidenceOptions[0].quote;
-    const validContent = conceptRequest ? { concepts: [{ name: sourceExcerpt.split(/\s+/).slice(0, 3).join(' '),
+    const answerRequest = body.response_format?.json_schema?.schema?.properties?.answer;
+    const planningRequest = body.response_format?.json_schema?.schema?.properties?.topics;
+    const input = JSON.parse(body.messages[1].content);
+    const sourceExcerpt = (input.evidenceOptions || input.sources)[0].quote;
+    const validContent = planningRequest ? { topics: [{ topic: 'Repository pattern', priority: 1, activity: 'PRACTICE',
+      instructions: 'Protocol test fixture: compare repository interfaces with direct SQL storage in the provided notes.', evidence: [1] }] } : answerRequest ? { answer: 'Protocol test fixture: repository interfaces separate storage from application behavior.',
+      answerable: mode !== 'unsupported', evidence: mode === 'unsupported' ? [] : [1] } : conceptRequest ? { concepts: [{ name: sourceExcerpt.split(/\s+/).slice(0, 3).join(' '),
       description: 'Protocol test fixture: repository interfaces separate SQL storage from application behavior.', evidence: [1] }] } : {
       summary: 'Protocol test fixture: repository interfaces keep SQL storage separate from application behavior.',
       evidence: [1],
     };
+    if (answerRequest && mode === 'long-answer') validContent.answer =
+      ('Seam carving resizes an image by finding low-energy connected paths through its pixels and removing those paths while preserving important content. '.repeat(10))
+      + '\n\nA long reference: https://example.test/' + 'source-reference-'.repeat(18)
+      + '\n\nThis is the final sentence of the complete saved answer.';
     const content = mode === 'invalid' ? 'invalid JSON' : JSON.stringify(validContent);
     response.setHeader('Content-Type', 'application/json');
     response.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content } }], usage: { prompt_tokens: 30, completion_tokens: 12 } }));
