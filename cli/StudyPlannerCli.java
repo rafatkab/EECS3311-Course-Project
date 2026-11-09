@@ -42,6 +42,13 @@ public class StudyPlannerCli {
             System.out.println("       java cli/StudyPlannerCli.java flashcards COURSE_ID REQUEST_JSON_FILE");
             System.out.println("       java cli/StudyPlannerCli.java decks COURSE_ID [BEFORE_SEQUENCE]");
             System.out.println("       java cli/StudyPlannerCli.java deck COURSE_ID DECK_ID");
+            System.out.println("       java cli/StudyPlannerCli.java generate-quiz COURSE_ID REQUEST_JSON_FILE");
+            System.out.println("       java cli/StudyPlannerCli.java quizzes COURSE_ID [BEFORE_SEQUENCE]");
+            System.out.println("       java cli/StudyPlannerCli.java quiz COURSE_ID QUIZ_ID");
+            System.out.println("       java cli/StudyPlannerCli.java start-quiz COURSE_ID QUIZ_ID");
+            System.out.println("       java cli/StudyPlannerCli.java quiz-attempts COURSE_ID QUIZ_ID");
+            System.out.println("       java cli/StudyPlannerCli.java quiz-attempt COURSE_ID QUIZ_ID ATTEMPT_ID");
+            System.out.println("       java cli/StudyPlannerCli.java save-quiz|finish-quiz COURSE_ID QUIZ_ID ATTEMPT_ID RESPONSES_JSON_FILE");
             System.out.println("       java cli/StudyPlannerCli.java save-profile PROFILE_JSON_FILE");
             System.out.println("       java cli/StudyPlannerCli.java plan COURSE_ID");
             System.out.println("       java cli/StudyPlannerCli.java generate-plan COURSE_ID REQUEST_JSON_FILE");
@@ -54,6 +61,10 @@ public class StudyPlannerCli {
             return;
         }
         boolean valid = switch (args[0]) {
+            case "generate-quiz", "quiz", "start-quiz", "quiz-attempts" -> args.length == 3;
+            case "quizzes" -> args.length == 2 || args.length == 3;
+            case "quiz-attempt" -> args.length == 4;
+            case "save-quiz", "finish-quiz" -> args.length == 5;
             case "flashcards", "deck" -> args.length == 3;
             case "decks" -> args.length == 2 || args.length == 3;
             case "list" -> args.length == 1;
@@ -87,6 +98,9 @@ public class StudyPlannerCli {
         String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3))
                 .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)).build();
+        if (java.util.Set.of("generate-quiz", "quizzes", "quiz", "start-quiz", "quiz-attempts", "quiz-attempt", "save-quiz", "finish-quiz").contains(args[0])) {
+            quiz(client, base, authorization, args); return;
+        }
         if (java.util.Set.of("flashcards", "decks", "deck").contains(args[0])) {
             String url = base + "/api/courses/" + UUID.fromString(args[1]) + "/flashcards";
             if (args[0].equals("deck")) url += "/" + UUID.fromString(args[2]);
@@ -169,6 +183,29 @@ public class StudyPlannerCli {
     private static HttpRequest.Builder request(String url, String authorization) {
         return HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(8))
                 .header("Authorization", authorization).header("Accept", "application/json");
+    }
+    private static void quiz(HttpClient client, String base, String authorization, String[] args) throws Exception {
+        String command = args[0], method = "GET";
+        String url = base + "/api/courses/" + UUID.fromString(args[1]) + "/quizzes";
+        if (command.equals("quizzes") && args.length == 3) url += "?before=" + Long.parseLong(args[2]);
+        if (!command.equals("quizzes") && !command.equals("generate-quiz")) url += "/" + UUID.fromString(args[2]);
+        if (java.util.Set.of("start-quiz", "quiz-attempts", "quiz-attempt", "save-quiz", "finish-quiz").contains(command)) url += "/attempts";
+        if (java.util.Set.of("quiz-attempt", "save-quiz", "finish-quiz").contains(command)) url += "/" + UUID.fromString(args[3]);
+        if (command.equals("finish-quiz")) url += "/submit";
+        byte[] body = null;
+        if (java.util.Set.of("generate-quiz", "save-quiz", "finish-quiz").contains(command)) {
+            try (var stream = Files.newInputStream(Path.of(args[command.equals("generate-quiz") ? 2 : 4]))) { body = stream.readNBytes(524289); }
+            if (body.length > 524288) throw new IllegalArgumentException("Quiz JSON files must be 512 KiB or smaller.");
+        }
+        if (command.equals("save-quiz")) method = "PUT";
+        if (java.util.Set.of("generate-quiz", "start-quiz", "finish-quiz").contains(command)) method = "POST";
+        var builder = request(url, authorization).timeout(Duration.ofSeconds(200));
+        if (!method.equals("GET")) {
+            var token = client.send(request(base + "/api/csrf", authorization).GET().build(), HttpResponse.BodyHandlers.ofString()); check(token);
+            builder.header("X-CSRF-TOKEN", token.headers().firstValue("X-CSRF-TOKEN").orElseThrow()).header("Content-Type", "application/json");
+        }
+        var result = client.send(builder.method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(body)).build(), HttpResponse.BodyHandlers.ofString());
+        check(result); System.out.println(result.body());
     }
     private static void planning(HttpClient client, String base, String authorization, String[] args) throws Exception {
         String command = args[0], method = "GET", body = null;

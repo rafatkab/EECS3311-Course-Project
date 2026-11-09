@@ -1,6 +1,7 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06, [switch] $IncludeF07)
+param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06, [switch] $IncludeF07, [switch] $IncludeF08)
+if ($IncludeF08) { $IncludeF07 = $true }
 if ($IncludeF07) { $IncludeF06 = $true }
 if ($IncludeF06) { $IncludeF05 = $true }
 if ($IncludeF05) { $IncludeF04 = $true }
@@ -124,6 +125,25 @@ try {
             node scripts/verify-f07-browser.mjs
             if ($LASTEXITCODE -ne 0) { throw 'F07 browser verification failed.' }
         }
+        if ($IncludeF08) {
+            $quiz = & $javaPath cli/StudyPlannerCli.java generate-quiz $courseIdentifier documentation/samples/quiz-request.json
+            if ($LASTEXITCODE -ne 0 -or ($quiz | ConvertFrom-Json).questions.Count -ne 4 -or $quiz -match 'expectedAnswer') { throw 'F08 CLI quiz generation or key protection failed.' }
+            $quizIdentifier = ($quiz | ConvertFrom-Json).resourceId
+            $attempt = (& $javaPath cli/StudyPlannerCli.java start-quiz $courseIdentifier $quizIdentifier | Out-String) | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $attempt.answerKey.Count -ne 0) { throw 'F08 CLI start failed.' }
+            $attemptIdentifier = $attempt.attempt.attemptId
+            $responsePath = Join-Path $runPath 'quiz-responses.json'
+            $answers = @{}
+            foreach ($question in $attempt.quiz.questions) { $answers[$question.questionId] = $(if ($question.type -eq 'MULTIPLE_CHOICE') { $question.choices[0] } else { 'CLI practice answer' }) }
+            [IO.File]::WriteAllText($responsePath, (@{version=0;responses=$answers} | ConvertTo-Json -Depth 10))
+            $draft = & $javaPath cli/StudyPlannerCli.java save-quiz $courseIdentifier $quizIdentifier $attemptIdentifier $responsePath
+            if ($LASTEXITCODE -ne 0 -or ($draft | ConvertFrom-Json).attempt.version -ne 1) { throw 'F08 CLI draft failed.' }
+            [IO.File]::WriteAllText($responsePath, (@{version=1;responses=$answers} | ConvertTo-Json -Depth 10))
+            $finished = & $javaPath cli/StudyPlannerCli.java finish-quiz $courseIdentifier $quizIdentifier $attemptIdentifier $responsePath
+            if ($LASTEXITCODE -ne 0 -or ($finished | ConvertFrom-Json).answerKey.Count -ne 4) { throw 'F08 CLI finish failed.' }
+            node scripts/verify-f08-browser.mjs
+            if ($LASTEXITCODE -ne 0) { throw 'F08 browser verification failed.' }
+        }
         Stop-Process -Id $backendProcess.Id
         $backendProcess.WaitForExit()
         node scripts/verify-f01-browser.mjs --offline
@@ -155,6 +175,13 @@ try {
                 $restoredDeck = & $javaPath cli/StudyPlannerCli.java deck $courseIdentifier $deckIdentifier
                 if ($LASTEXITCODE -ne 0 -or ($restoredDeck | ConvertFrom-Json).cards.Count -ne 4) { throw 'F07 restart/offline retrieval failed.' }
                 Write-Output 'PASS: F07 CLI generation/list/read and saved deck persistence after restart with provider stopped.'
+            }
+            if ($IncludeF08) {
+                $restoredQuiz = & $javaPath cli/StudyPlannerCli.java quiz $courseIdentifier $quizIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($restoredQuiz | ConvertFrom-Json).questions.Count -ne 4 -or $restoredQuiz -match 'expectedAnswer') { throw 'F08 saved quiz restart check failed.' }
+                $restoredAttempt = & $javaPath cli/StudyPlannerCli.java quiz-attempt $courseIdentifier $quizIdentifier $attemptIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($restoredAttempt | ConvertFrom-Json).answerKey.Count -ne 4) { throw 'F08 saved attempt restart check failed.' }
+                Write-Output 'PASS: F08 CLI generation, draft saving, finishing, and quiz/attempt persistence after restart without a model.'
             }
             Write-Output 'PASS: F03 CLI and saved-summary persistence after restart without a provider. Scripted fixture only; live AI quality not verified.'
             if ($IncludeF04) {

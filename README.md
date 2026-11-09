@@ -271,3 +271,44 @@ skip repeatedly unusable facts. If later model output fails, already validated c
 can be saved as a smaller new deck with an explanation; old decks remain unchanged.
 No new deck is saved when no cards pass validation. Provider/transport failures still
 show an error rather than inventing cards.
+
+## Quizzes (F08)
+
+Open a course and expand **Quizzes**. Choose 1–20 questions, difficulty, optional
+topics/materials, and short-answer or multiple-choice questions. Empty types default
+to short answer. **Generate quiz** saves a new quiz only when the requested count is
+valid. Insufficient material or failed AI generation leaves earlier quizzes intact.
+
+Choose a saved quiz, click **Start quiz**, answer questions, and **Save quiz draft**
+to resume later from Recent attempts. **Finish and save answers** requires all
+answers, freezes that attempt, and reveals the expected answers and source quotes.
+Automatic scores and feedback belong to F09 and are not implemented yet.
+
+```powershell
+java cli/StudyPlannerCli.java generate-quiz COURSE_ID documentation/samples/quiz-request.json
+java cli/StudyPlannerCli.java quizzes COURSE_ID
+java cli/StudyPlannerCli.java quiz COURSE_ID QUIZ_ID
+java cli/StudyPlannerCli.java start-quiz COURSE_ID QUIZ_ID
+java cli/StudyPlannerCli.java quiz-attempts COURSE_ID QUIZ_ID
+java cli/StudyPlannerCli.java quiz-attempt COURSE_ID QUIZ_ID ATTEMPT_ID
+java cli/StudyPlannerCli.java save-quiz COURSE_ID QUIZ_ID ATTEMPT_ID RESPONSES_JSON_FILE
+java cli/StudyPlannerCli.java finish-quiz COURSE_ID QUIZ_ID ATTEMPT_ID RESPONSES_JSON_FILE
+```
+
+Responses JSON contains `version` from the latest attempt and `responses`, a map of
+question UUIDs to answer strings. Multiple-choice answers use the exact choice text.
+Saving replaces the full response map. Keep the returned version for the next write;
+stale writes get a conflict. Start another attempt to retry a finished quiz.
+
+The planned flow is Course → StudyAssistantFacade → AssessmentAgent → AIEngine →
+StudyResourceFactory → Quiz. **Facade, Singleton, and Simple Factory** are reused;
+Quiz is the fifth factory product. See [F08 diagrams](documentation/diagrams/stage2-f08.md).
+Tests: `scripts/verify-f01.ps1 -IncludeF08` uses a scripted protocol fixture;
+`scripts/verify-f08-live.ps1` uses real local Ollama. Both need packaged apps and the
+existing Chrome/Playwright test setup. Review generated questions and distractors:
+source-backed answers do not guarantee question relevance or unambiguous choices.
+F08 uses source-based fill-in-the-blank questions for both supported types. The AI
+selects the removed phrase and MCQ distractors; Java constructs the stem from the
+original fact. Restoring the expected phrase must reproduce the source statement.
+This avoids mismatched generated questions/keys. Difficulty guides which phrase
+is removed; semantic difficulty and distractor ambiguity still need review.

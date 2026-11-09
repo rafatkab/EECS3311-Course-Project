@@ -31,9 +31,12 @@ const server = http.createServer(async (request, response) => {
     const answerRequest = body.response_format?.json_schema?.schema?.properties?.answer;
     const planningRequest = body.response_format?.json_schema?.schema?.properties?.topics;
     const flashcardRequest = body.response_format?.json_schema?.schema?.properties?.cards;
+    const quizRequest = body.response_format?.json_schema?.schema?.properties?.distractors;
     const input = JSON.parse(body.messages[1].content);
-    const sourceExcerpt = (input.evidenceOptions || input.sources)[0].quote;
-    const validContent = flashcardRequest ? { cards: Array.from({ length: input.batchLimit }, (_, i) => ({
+    const sourceExcerpt = (input.evidenceOptions || input.sources)?.[0]?.quote || input.source;
+    const validContent = quizRequest ? { answer: input.targetFact.split(/\s+/).slice(0, 3).join(' '),
+      distractors: input.questionType === 'MULTIPLE_CHOICE' ? ['The application must concatenate SQL input.', 'All storage belongs in the user interface.', 'Every class must share global mutable state.'] : []
+    } : flashcardRequest ? { cards: Array.from({ length: input.batchLimit }, (_, i) => ({
       question: `What does repository example ${input.alreadyAskedQuestions.length + i + 1} separate?`,
       answer: input.answerOptions[i], evidence: [input.sources.find(s => s.quote.replace(/\s+/g, ' ').trim().includes(input.answerOptions[i])).id],
     })) } : planningRequest ? { topics: [{ topic: 'Repository pattern', priority: 1, activity: 'PRACTICE',

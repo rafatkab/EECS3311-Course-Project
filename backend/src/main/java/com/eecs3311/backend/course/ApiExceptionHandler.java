@@ -54,7 +54,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ApiError> malformed(Exception exception) {
         if (exception.getCause() instanceof com.fasterxml.jackson.databind.exc.ValueInstantiationException value
-                && java.util.Set.of(com.eecs3311.backend.planning.PlanRequest.class, com.eecs3311.backend.planning.StudyProfile.Availability.class).contains(value.getType().getRawClass())
+                && java.util.Set.of(com.eecs3311.backend.planning.PlanRequest.class, com.eecs3311.backend.planning.StudyProfile.Availability.class, com.eecs3311.backend.assessment.QuizRequest.class).contains(value.getType().getRawClass())
                 && value.getCause() instanceof IllegalArgumentException invalid)
             return ResponseEntity.badRequest().body(new ApiError(invalid.getMessage(), Map.of()));
         return ResponseEntity.badRequest().body(new ApiError("Invalid request. Use ISO dates (YYYY-MM-DD) and valid course IDs.", Map.of()));

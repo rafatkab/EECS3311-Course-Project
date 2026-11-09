@@ -19,6 +19,32 @@ import java.io.ByteArrayOutputStream;
 
 /** Real backend requests, with cookies and CSRF protection; no mock fallback data. */
 public class CourseApi {
+    private String quizPath(UUID course) { return "/api/courses/" + course + "/quizzes"; }
+    private String quizWrite(String path, Object body, String method) {
+        try {
+            String token; synchronized (this) { token = csrfToken(); }
+            return send(request(path).timeout(Duration.ofSeconds(200)).header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
+                    .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body))).build()).body();
+        } catch (IOException e) { throw new ApiFailure("Could not prepare quiz request. Reopen saved data before retrying."); }
+    }
+    private <T> T quizRead(String body, Class<T> type) {
+        try { return mapper.readValue(body, type); } catch (IOException e) { throw new ApiFailure("Could not read quiz data. Reopen saved data before retrying."); }
+    }
+    public QuizData.Quiz generateQuiz(UUID course, QuizData.Request input) { return quizRead(quizWrite(quizPath(course), input, "POST"), QuizData.Quiz.class); }
+    public QuizData.Quiz quiz(UUID course, UUID quiz) { return quizRead(send(request(quizPath(course) + "/" + quiz).GET().build()).body(), QuizData.Quiz.class); }
+    public List<QuizData.Saved> quizzes(UUID course, Long before) {
+        try { return mapper.readValue(send(request(quizPath(course) + (before == null ? "" : "?before=" + before)).GET().build()).body(), new TypeReference<>() { }); }
+        catch (IOException e) { throw new ApiFailure("Could not read saved quizzes."); }
+    }
+    public List<QuizData.Attempt> quizAttempts(UUID course, UUID quiz) {
+        try { return mapper.readValue(send(request(quizPath(course) + "/" + quiz + "/attempts").GET().build()).body(), new TypeReference<>() { }); }
+        catch (IOException e) { throw new ApiFailure("Could not read quiz attempts."); }
+    }
+    public QuizData.State startQuiz(UUID course, UUID quiz) { return quizRead(quizWrite(quizPath(course) + "/" + quiz + "/attempts", null, "POST"), QuizData.State.class); }
+    public QuizData.State quizAttempt(UUID course, UUID quiz, UUID attempt) { return quizRead(send(request(quizPath(course) + "/" + quiz + "/attempts/" + attempt).GET().build()).body(), QuizData.State.class); }
+    public QuizData.State saveQuizAttempt(UUID course, UUID quiz, UUID attempt, QuizData.Input input, boolean submit) {
+        return quizRead(quizWrite(quizPath(course) + "/" + quiz + "/attempts/" + attempt + (submit ? "/submit" : ""), input, submit ? "POST" : "PUT"), QuizData.State.class);
+    }
     public FlashcardData.Deck generateFlashcards(UUID course, FlashcardData.Request input) {
         try {
             String token; synchronized (this) { token = csrfToken(); }

@@ -260,3 +260,43 @@ skip repeatedly unusable facts. If later model output fails, already validated c
 can be saved as a smaller new deck with an explanation; old decks remain unchanged.
 No new deck is saved when no cards pass validation. Provider/transport failures still
 show an error rather than inventing cards.
+
+## F08 quiz API
+
+- POST `/api/courses/{id}/quizzes`: `questionCount` (1–20), `difficulty`
+  (EASY/MEDIUM/HARD), optional `topics` (500 characters), `materialIds` (empty = all),
+  and `questionTypes` (SHORT_ANSWER/MULTIPLE_CHOICE; empty = SHORT_ANSWER). Returns 201.
+- GET `/api/courses/{id}/quizzes[?before=SEQUENCE]`: latest 25 quiz summaries.
+- GET `.../quizzes/{quizId}`: public questions and choices, no answer key.
+- POST `.../quizzes/{quizId}/attempts`: start a draft (201).
+- GET `.../quizzes/{quizId}/attempts`: latest 25 saved attempts.
+- GET `.../quizzes/{quizId}/attempts/{attemptId}`: saved state. Keys/quotes are included
+  only for finished attempts.
+- PUT `.../quizzes/{quizId}/attempts/{attemptId}`: save a full response map with its version.
+- POST `.../quizzes/{quizId}/attempts/{attemptId}/submit`: finish using the same input.
+  All questions require an answer; this saves an immutable attempt and permits review.
+  F09 scoring and feedback remain pending.
+
+Every route checks course ownership; writes also need CSRF. Unknown question IDs,
+answers over 4000 characters, unlisted MCQ choices, stale versions, and updates to
+finished attempts are rejected. Drafts may be incomplete. The single version-checked
+SQL update prevents silent overwrites from concurrent windows. No answer keys are
+sent by ordinary quiz/start/draft endpoints. H2 adds `quizzes` and `quiz_attempts`.
+
+`Course.generateStudyResource` → `StudyAssistantFacade.generateQuiz` →
+`AssessmentAgent.generateQuiz` → `QuizGenerator` → singleton `AIEngine.generate`.
+The helper targets distinct source facts, asks for an exact missing phrase and optional three
+distractors, validates output, and resolves answers/citations on the backend. The
+factory creates Quiz; `startQuiz` provides its public view. Mixed types alternate in
+request order. Exactly the requested count must pass before saving. No partial quiz
+or fake questions are saved. Failed generation preserves earlier quizzes/attempts.
+
+Limits: 50 materials, 1,000,000 extracted characters, six 700-character excerpts,
+40 model calls / 180 seconds. Each fact gets one repair; unusable facts are skipped within the overall call/time budget. Difficulty/relevance/ambiguity remain model limitations. No
+new dependency, provider configuration, grading Strategy, or Quiz calendar behavior
+is added. CLI quiz input files are bounded to 512 KiB.
+F08 uses source-based fill-in-the-blank questions for both supported types. The AI
+selects the removed phrase and MCQ distractors; Java constructs the stem from the
+original fact. Restoring the expected phrase must reproduce the source statement.
+This avoids mismatched generated questions/keys. Difficulty guides which phrase
+is removed; semantic difficulty and distractor ambiguity still need review.

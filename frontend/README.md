@@ -103,3 +103,19 @@ source answers; repeated questions/answers are removed. Generation continues tow
 the maximum until answers are exhausted or two batches add no cards (40 calls /
 180 seconds maximum). A smaller saved deck shows an explanation. Restart both apps
 and generate a new deck to apply this behavior to existing courses.
+
+## F08 quizzes
+
+`views/QuizPanel.java` provides count, difficulty, topic, type, and material controls;
+saved quizzes; and start/save/resume/finish actions. `course/QuizData.java` and
+`CourseApi` carry typed public quiz/attempt data. Generation and reads use the existing
+background executor with progress/errors; pending requests temporarily disable the
+panel. Failed requests preserve current answers and form input. Unsaved changes must
+be saved or discarded before switching quizzes or generating another one.
+
+Saved quizzes and the latest 25 attempts are available without AI. Drafts hide keys;
+finished attempts show source-backed expected answers and expandable quotations.
+Question and answer text is escaped and wraps at phone widths. A version conflict
+requires reopening the attempt before another save. This feature does not grade:
+automatic scores and feedback remain F09. Material selection represents separately
+uploaded sections; a dedicated section editor is not included.

@@ -20,6 +20,8 @@ import java.util.UUID;
 /** Immutable course owned by one student; dates are inclusive. */
 public record Course(UUID courseId, UUID ownerId, String name, String description,
                      LocalDate startDate, LocalDate endDate, Instant createdAt) {
+    public com.eecs3311.backend.assessment.Quiz generateStudyResource(com.eecs3311.backend.assessment.QuizRequest request,
+            List<LearningMaterial> materials, StudyAssistantFacade assistant) { return assistant.generateQuiz(this, request, materials); }
     public com.eecs3311.backend.assessment.FlashcardDeck generateStudyResource(com.eecs3311.backend.assessment.FlashcardRequest request,
             List<LearningMaterial> materials, StudyAssistantFacade assistant) {
         return assistant.generateFlashcards(this, request, materials);

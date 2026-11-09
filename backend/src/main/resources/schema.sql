@@ -104,3 +104,25 @@ CREATE TABLE IF NOT EXISTS flashcard_decks (
     CONSTRAINT valid_flashcard_count CHECK (card_count >= 1 AND card_count <= card_limit AND card_limit <= 20)
 );
 CREATE INDEX IF NOT EXISTS flashcards_course_sequence ON flashcard_decks(course_id, sequence);
+
+CREATE TABLE IF NOT EXISTS quizzes (
+    resource_id UUID PRIMARY KEY,
+    sequence BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    question_count INT NOT NULL CHECK (question_count BETWEEN 1 AND 20),
+    difficulty VARCHAR(10) NOT NULL,
+    topics VARCHAR(500) NOT NULL,
+    quiz_json CLOB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quizzes_course_sequence ON quizzes(course_id,sequence);
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+    attempt_id UUID PRIMARY KEY,
+    sequence BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+    quiz_id UUID NOT NULL REFERENCES quizzes(resource_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    submitted_at TIMESTAMP WITH TIME ZONE,
+    version INT NOT NULL,
+    responses_json CLOB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quiz_attempts_quiz_sequence ON quiz_attempts(quiz_id,sequence);

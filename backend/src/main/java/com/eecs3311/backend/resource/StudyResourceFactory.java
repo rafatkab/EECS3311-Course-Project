@@ -21,6 +21,12 @@ import java.util.UUID;
 /** Stage 1 simple Factory: clients request a resource without assembling its identity/provenance. */
 @Component
 public class StudyResourceFactory {
+    public StudyResource createResource(String type, Course course, com.eecs3311.backend.ai.QuizGenerator.Draft draft,
+            com.eecs3311.backend.assessment.QuizRequest request) {
+        if (!"Quiz".equals(type)) throw new IllegalArgumentException("Quiz data requires the Quiz resource type.");
+        return new com.eecs3311.backend.assessment.Quiz(UUID.randomUUID(), course.courseId(), Instant.now(), request,
+                draft.questions(), draft.model(), draft.modelCalls(), draft.inputTokens(), draft.outputTokens());
+    }
     public StudyResource createResource(String type, Course course, com.eecs3311.backend.ai.AssessmentAgent.FlashcardDraft draft,
             com.eecs3311.backend.assessment.FlashcardRequest request) {
         if (!"FlashcardDeck".equals(type)) throw new IllegalArgumentException("Flashcard data requires the FlashcardDeck resource type.");

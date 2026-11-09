@@ -29,12 +29,14 @@ public class CourseMaterialsPanel extends VerticalLayout {
     private final Paragraph result = new Paragraph();
     private final Span count = new Span();
     private final FlashcardPanel flashcards;
+    private final QuizPanel quizzes;
 
     public CourseMaterialsPanel(CourseApi api, Course course, java.util.concurrent.Executor summaryExecutor, Runnable back) {
         this.api = api;
         this.course = course;
         this.summaryExecutor = summaryExecutor;
         flashcards = new FlashcardPanel(api, course.courseId(), summaryExecutor);
+        quizzes = new QuizPanel(api, course.courseId(), summaryExecutor);
         setWidth("90%");
         setPadding(false);
         addClassName("materials-workspace");
@@ -104,9 +106,11 @@ public class CourseMaterialsPanel extends VerticalLayout {
         var planning = new com.vaadin.flow.component.details.Details("Study plan and availability", new StudyPlanningPanel(api, course, summaryExecutor));
         planning.setWidthFull(); planning.getStyle().set("min-width", "0").set("max-width", "100%");
         var flashcardDetails = new com.vaadin.flow.component.details.Details("Flashcards", flashcards);
+        var quizDetails = new com.vaadin.flow.component.details.Details("Quizzes", quizzes);
+        quizDetails.setWidthFull(); quizDetails.getStyle().set("min-width", "0").set("max-width", "100%");
         flashcardDetails.setWidthFull(); flashcardDetails.getStyle().set("min-width", "0").set("max-width", "100%");
         add(backButton, label, new H1(course.name()), new Paragraph(course.description()), dates,
-                planning, flashcardDetails,
+                planning, flashcardDetails, quizDetails,
                 new CourseChatPanel(api, course.courseId(), summaryExecutor), uploadPanel, error, result, toolbar, materials);
         refreshMaterials();
     }
@@ -115,6 +119,7 @@ public class CourseMaterialsPanel extends VerticalLayout {
         try {
             var list = api.listMaterials(course.courseId());
             flashcards.setMaterials(list);
+            quizzes.setMaterials(list);
             materials.removeAll();
             count.setText(list.size() + (list.size() == 1 ? " file" : " files"));
             if (list.isEmpty()) {

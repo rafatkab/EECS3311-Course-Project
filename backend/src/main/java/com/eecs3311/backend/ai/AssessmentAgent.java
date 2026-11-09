@@ -16,10 +16,13 @@ public class AssessmentAgent {
     private final AiSettings settings;
     private final ObjectMapper json;
     private final CourseContextRetriever retriever;
-    public AssessmentAgent(AiSettings settings, ObjectMapper json, CourseContextRetriever retriever) {
+    private final QuizGenerator quizzes;
+    public AssessmentAgent(AiSettings settings, ObjectMapper json, CourseContextRetriever retriever, QuizGenerator quizzes) {
+        this.quizzes = quizzes;
         this.settings = settings; this.json = json; this.retriever = retriever;
     }
     public record FlashcardDraft(List<Flashcard> cards, String model, int modelCalls, long inputTokens, long outputTokens) { }
+    public QuizGenerator.Draft generateQuiz(Course course, QuizRequest request, List<LearningMaterial> materials) { return quizzes.generate(course, request, materials); }
     public FlashcardDraft generateFlashcards(Course course, FlashcardRequest request, List<LearningMaterial> materials) {
         if (materials.stream().anyMatch(m -> !course.courseId().equals(m.courseId()))) throw new IllegalArgumentException("Flashcard materials must belong to the course.");
         var sources = completePassages(retriever.retrieve(materials, request.focus().isBlank() ? "Give me an overview" : request.focus(), List.of()));
@@ -116,7 +119,7 @@ public class AssessmentAgent {
         }
         return new FlashcardDraft(List.copyOf(cards.values()), settings.model(), calls, inputTokens, outputTokens);
     }
-    private List<CourseContextRetriever.Excerpt> completePassages(List<CourseContextRetriever.Excerpt> excerpts) {
+    static List<CourseContextRetriever.Excerpt> completePassages(List<CourseContextRetriever.Excerpt> excerpts) {
         var result = new ArrayList<CourseContextRetriever.Excerpt>();
         for (var source : excerpts) {
             String quote = source.quote();

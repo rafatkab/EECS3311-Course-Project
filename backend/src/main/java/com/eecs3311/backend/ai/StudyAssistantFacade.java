@@ -17,6 +17,10 @@ import org.springframework.stereotype.Service;
 /** Stage 1 Facade: callers do not coordinate model calls, validation, or resource construction. */
 @Service
 public class StudyAssistantFacade {
+    public com.eecs3311.backend.assessment.Quiz generateQuiz(Course course,
+            com.eecs3311.backend.assessment.QuizRequest request, List<LearningMaterial> materials) {
+        return (com.eecs3311.backend.assessment.Quiz) resources.createResource("Quiz", course, assessmentAgent.generateQuiz(course, request, materials), request);
+    }
     public com.eecs3311.backend.assessment.FlashcardDeck generateFlashcards(Course course,
             com.eecs3311.backend.assessment.FlashcardRequest request, List<LearningMaterial> materials) {
         return (com.eecs3311.backend.assessment.FlashcardDeck) resources.createResource("FlashcardDeck", course,
