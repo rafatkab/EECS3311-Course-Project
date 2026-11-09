@@ -59,7 +59,14 @@ class PlanningApiTests {
                 if (status != 200) response = "{\"error\":{\"message\":\"secret-provider-diagnostic\"}}";
                 else {
                     var body = JSON.readTree(request);
-                    String content = JSON.writeValueAsString(Map.of("topics", List.of(Map.of("topic", "Repository Pattern", "priority", 1, "activity", "PRACTICE", "instructions", "Compare repository interfaces with direct SQL storage in the supplied notes.", "evidence", List.of(mode.equals("ungrounded") ? 9999 : 1)))));
+                    String topic = "Repository Pattern";
+                    if (mode.equals("diverse")) {
+                        String quote = JSON.readTree(body.path("messages").get(1).path("content").asText()).path("sources").get(0).path("quote").asText();
+                        topic = quote.contains("Canny") ? "Canny edge detection" : quote.contains("Seam") ? "Seam carving" : quote.contains("Enzymes") ? "Enzyme activity" : topic;
+                    }
+                    if (mode.equals("aliases")) topic = JSON.readTree(body.path("messages").get(1).path("content").asText()).path("alreadyRecommendedTopics").isEmpty()
+                            ? "Diffusion vs Active Transport" : call == 2 ? "Difference Between Diffusion and Active Transport" : "Differentiation of Diffusion and Active Transport";
+                    String content = JSON.writeValueAsString(Map.of("topics", List.of(Map.of("topic", topic, "priority", 1, "activity", "PRACTICE", "instructions", mode.equals("unfinished") ? "Compare the main concepts, including their current" : "Compare repository interfaces with direct SQL storage in the supplied notes.", "evidence", List.of(mode.equals("ungrounded") ? 9999 : 1)))));
                     if (mode.equals("invalid") || mode.equals("repair") && call == 1) content = "not valid JSON";
                     var result = JSON.createObjectNode();
                     result.set("choices", JSON.valueToTree(List.of(Map.of("finish_reason", mode.equals("truncated") ? "length" : "stop", "message", Map.of("content", content)))));
@@ -148,6 +155,45 @@ class PlanningApiTests {
         assertThat(payload.path("profile").path("preferences").asText()).contains("worked examples");
         assertThat(payload.path("request").path("assessmentNotes").asText()).contains("struggled");
         assertThat(json.readTree(LAST_REQUEST.get()).path("response_format").path("json_schema").path("schema").path("properties").has("topics")).isTrue();
+    }
+    @Test void discoversTopicsAcrossPassagesInsteadOfReusingOnlyTheFirstOverview() throws Exception {
+        profile(180);
+        upload("Canny edge detection uses smoothing, intensity gradients, suppression, and thresholding to locate image edges.");
+        upload("Seam carving removes connected low-energy image paths to resize an image while preserving important content.");
+        upload("Enzymes speed up chemical reactions by lowering activation energy; temperature and pH affect their activity.");
+        MODE.set("diverse");
+        var result = json.readTree(generate(30, 4).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(result.path("priorityTopics").size()).isEqualTo(4);
+        assertThat(result.path("sessions")).extracting(node -> node.path("topic").asText()).doesNotHaveDuplicates();
+        assertThat(CALLS.get()).isEqualTo(4);
+        assertThat(result.path("modelCalls").asInt()).isEqualTo(4);
+        assertThat(result.path("inputTokens").asInt()).isEqualTo(120);
+    }
+    @Test void limitedContentUsesDifferentTasksWhenRevisited() throws Exception {
+        profile(180);
+        var result = json.readTree(generate(45, 4).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(result.path("sessions")).extracting(node -> node.path("instructions").asText()).doesNotHaveDuplicates();
+        assertThat(result.path("sessions").get(1).path("activityType").asText()).isEqualTo("PRACTICE");
+        assertThat(result.path("sessions").get(2).path("activityType").asText()).isEqualTo("REVIEW");
+        assertThat(result.path("sessions").get(0).path("citations")).isEqualTo(result.path("sessions").get(3).path("citations"));
+    }
+    @Test void paraphrasedComparisonTitlesDoNotPretendToBeDifferentTopics() throws Exception {
+        profile(180);
+        upload("Diffusion follows a concentration gradient, while active transport uses energy to move substances against the gradient.");
+        upload("Active transport requires cellular energy. Diffusion is movement from higher concentration to lower concentration.");
+        MODE.set("aliases");
+        var result = json.readTree(generate(45, 4).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(result.path("priorityTopics").size()).isEqualTo(1);
+        assertThat(result.path("sessions")).extracting(node -> node.path("instructions").asText()).doesNotHaveDuplicates();
+    }
+    @Test void unfinishedInstructionsAreRepairedThenRejectedWithoutReplacingPlan() throws Exception {
+        profile(180); generate(45, 4).andExpect(status().isOk());
+        String original = jdbc.queryForObject("SELECT resource_id FROM study_plans", String.class);
+        MODE.set("unfinished"); CALLS.set(0);
+        generate(45, 4).andExpect(status().isBadGateway());
+        assertThat(CALLS.get()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT resource_id FROM study_plans", String.class)).isEqualTo(original);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM calendar_events", Integer.class)).isEqualTo(4);
     }
     @Test void calendarBusyTimesAndExamDeadlineConstrainTheSchedule() throws Exception {
         profile(180); addEvent("BUSY", "18:00", "19:00"); addEvent("EXAM", "20:30", "21:00");

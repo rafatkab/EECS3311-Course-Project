@@ -91,3 +91,16 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     CONSTRAINT valid_event_times CHECK (end_time > start_time)
 );
 CREATE INDEX IF NOT EXISTS calendar_owner_time ON calendar_events(owner_id, start_time, end_time);
+
+CREATE TABLE IF NOT EXISTS flashcard_decks (
+    resource_id UUID PRIMARY KEY,
+    sequence BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    card_limit INT NOT NULL,
+    card_count INT NOT NULL,
+    focus VARCHAR(200) NOT NULL,
+    deck_json CLOB NOT NULL,
+    CONSTRAINT valid_flashcard_count CHECK (card_count >= 1 AND card_count <= card_limit AND card_limit <= 20)
+);
+CREATE INDEX IF NOT EXISTS flashcards_course_sequence ON flashcard_decks(course_id, sequence);

@@ -1,6 +1,7 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06)
+param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06, [switch] $IncludeF07)
+if ($IncludeF07) { $IncludeF06 = $true }
 if ($IncludeF06) { $IncludeF05 = $true }
 if ($IncludeF05) { $IncludeF04 = $true }
 if ($IncludeF04) { $IncludeF03 = $true }
@@ -112,6 +113,17 @@ try {
                 }
             }
         }
+        if ($IncludeF07) {
+            $flashcardRequest = Join-Path $runPath 'flashcard-request.json'
+            [IO.File]::WriteAllText($flashcardRequest, (@{cardLimit=4;materialIds=@();focus=''} | ConvertTo-Json))
+            $deck = & $javaPath cli/StudyPlannerCli.java flashcards $courseIdentifier $flashcardRequest
+            if ($LASTEXITCODE -ne 0 -or ($deck | ConvertFrom-Json).cards.Count -ne 4) { throw 'F07 CLI generation failed.' }
+            $deckIdentifier = ($deck | ConvertFrom-Json).resourceId
+            $decks = & $javaPath cli/StudyPlannerCli.java decks $courseIdentifier
+            if ($LASTEXITCODE -ne 0 -or $decks -notmatch $deckIdentifier) { throw 'F07 CLI saved deck list failed.' }
+            node scripts/verify-f07-browser.mjs
+            if ($LASTEXITCODE -ne 0) { throw 'F07 browser verification failed.' }
+        }
         Stop-Process -Id $backendProcess.Id
         $backendProcess.WaitForExit()
         node scripts/verify-f01-browser.mjs --offline
@@ -139,6 +151,11 @@ try {
             if ($LASTEXITCODE -ne 0 -or ($storedSummary | ConvertFrom-Json).resourceId -ne $summaryIdentifier) { throw 'Saved summary restart/offline retrieval failed.' }
             $cachedSummary = & $javaPath cli/StudyPlannerCli.java summarize $courseIdentifier $materialIdentifier
             if ($LASTEXITCODE -ne 0 -or ($cachedSummary | ConvertFrom-Json).resourceId -ne $summaryIdentifier) { throw 'Summary cache unexpectedly required a model call.' }
+            if ($IncludeF07) {
+                $restoredDeck = & $javaPath cli/StudyPlannerCli.java deck $courseIdentifier $deckIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($restoredDeck | ConvertFrom-Json).cards.Count -ne 4) { throw 'F07 restart/offline retrieval failed.' }
+                Write-Output 'PASS: F07 CLI generation/list/read and saved deck persistence after restart with provider stopped.'
+            }
             Write-Output 'PASS: F03 CLI and saved-summary persistence after restart without a provider. Scripted fixture only; live AI quality not verified.'
             if ($IncludeF04) {
                 $stored = & $javaPath cli/StudyPlannerCli.java concepts $courseIdentifier $materialIdentifier

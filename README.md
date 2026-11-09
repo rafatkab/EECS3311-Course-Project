@@ -224,3 +224,50 @@ F06 includes UC-11 profile maintenance and the calendar support needed for sched
 The full F10 calendar interface and automatic quiz-result integration remain pending;
 assessment notes are entered manually until F08/F09 exist. See the
 [F06 UML and sequence](documentation/diagrams/stage2-f06.md).
+## Flashcards (F07)
+
+Open a course and expand **Flashcards**. Choose a maximum of 1–20 cards, optionally
+select materials and a topic, then click **Generate flashcards**. Leaving materials
+empty uses all course documents. Select a separately uploaded section to study it.
+The model may return fewer cards when the excerpts support fewer distinct questions.
+
+Click the question or **Show answer** to reveal the answer and source quotations.
+**Previous card** / **Next card** reset the answer to hidden. **Saved decks** reopens
+older results without a model call; generation failures preserve existing decks.
+Answers wrap at phone widths. Review AI answers against their sources.
+
+The flow follows Stage 1 SD04: Course → StudyAssistantFacade → AssessmentAgent →
+AIEngine → StudyResourceFactory → FlashcardDeck. It reuses Facade, Singleton, and
+Simple Factory. See [F07 diagrams and limits](documentation/diagrams/stage2-f07.md).
+
+```powershell
+java cli/StudyPlannerCli.java flashcards COURSE_ID documentation/samples/flashcard-request.json
+java cli/StudyPlannerCli.java decks COURSE_ID
+java cli/StudyPlannerCli.java deck COURSE_ID DECK_ID
+```
+
+Use the existing CLI credentials and BACKEND_URL settings. The sample uses all
+materials with a five-card maximum. `materialIds` accepts uploaded material UUIDs;
+`focus` narrows the topic. Tests: `scripts/verify-f01.ps1 -IncludeF07` uses a scripted
+protocol fixture; `scripts/verify-f07-live.ps1` uses real local Ollama. Both require
+packaged apps and the existing Chrome/Playwright verification setup.
+F07 answers must appear in a cited excerpt (case and repeated whitespace are ignored).
+The AI writes the question and selects the answer; unsupported cards are skipped after repair; only validated cards are saved. Questions and citation relevance still need review.
+
+F06 topic-diversity update: the planner now checks separate source passages for up to
+12 specific topics, instead of repeating a single short overview. Repeated topics
+receive different practice/review tasks. Instructions must be complete sentences.
+Discovery is bounded to six passages, two calls per passage, and 180 seconds total.
+Restart the backend and generate a new plan to update an existing saved schedule.
+
+F07 count fix: short batches no longer end generation. Each new batch receives unused
+source answers; repeated questions/answers are removed. Generation continues toward
+the maximum until answers are exhausted or two batches add no cards (40 calls /
+180 seconds maximum). A smaller saved deck shows an explanation. Restart both apps
+and generate a new deck to apply this behavior to existing courses.
+
+F07 validation recovery: mixed batches retain only valid cards. Single-fact retries
+skip repeatedly unusable facts. If later model output fails, already validated cards
+can be saved as a smaller new deck with an explanation; old decks remain unchanged.
+No new deck is saved when no cards pass validation. Provider/transport failures still
+show an error rather than inventing cards.

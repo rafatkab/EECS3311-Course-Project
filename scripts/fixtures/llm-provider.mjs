@@ -30,9 +30,13 @@ const server = http.createServer(async (request, response) => {
     const conceptRequest = body.response_format?.json_schema?.schema?.properties?.concepts;
     const answerRequest = body.response_format?.json_schema?.schema?.properties?.answer;
     const planningRequest = body.response_format?.json_schema?.schema?.properties?.topics;
+    const flashcardRequest = body.response_format?.json_schema?.schema?.properties?.cards;
     const input = JSON.parse(body.messages[1].content);
     const sourceExcerpt = (input.evidenceOptions || input.sources)[0].quote;
-    const validContent = planningRequest ? { topics: [{ topic: 'Repository pattern', priority: 1, activity: 'PRACTICE',
+    const validContent = flashcardRequest ? { cards: Array.from({ length: input.batchLimit }, (_, i) => ({
+      question: `What does repository example ${input.alreadyAskedQuestions.length + i + 1} separate?`,
+      answer: input.answerOptions[i], evidence: [input.sources.find(s => s.quote.replace(/\s+/g, ' ').trim().includes(input.answerOptions[i])).id],
+    })) } : planningRequest ? { topics: [{ topic: 'Repository pattern', priority: 1, activity: 'PRACTICE',
       instructions: 'Protocol test fixture: compare repository interfaces with direct SQL storage in the provided notes.', evidence: [1] }] } : answerRequest ? { answer: 'Protocol test fixture: repository interfaces separate storage from application behavior.',
       answerable: mode !== 'unsupported', evidence: mode === 'unsupported' ? [] : [1] } : conceptRequest ? { concepts: [{ name: sourceExcerpt.split(/\s+/).slice(0, 3).join(' '),
       description: 'Protocol test fixture: repository interfaces separate SQL storage from application behavior.', evidence: [1] }] } : {
@@ -43,7 +47,7 @@ const server = http.createServer(async (request, response) => {
       ('Seam carving resizes an image by finding low-energy connected paths through its pixels and removing those paths while preserving important content. '.repeat(10))
       + '\n\nA long reference: https://example.test/' + 'source-reference-'.repeat(18)
       + '\n\nThis is the final sentence of the complete saved answer.';
-    const content = mode === 'invalid' ? 'invalid JSON' : JSON.stringify(validContent);
+    const content = mode === 'invalid' || mode === 'partial' && flashcardRequest && input.alreadyAskedQuestions.length > 0 ? 'invalid JSON' : JSON.stringify(validContent);
     response.setHeader('Content-Type', 'application/json');
     response.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content } }], usage: { prompt_tokens: 30, completion_tokens: 12 } }));
   } catch {

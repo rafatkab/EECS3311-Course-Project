@@ -17,6 +17,12 @@ import org.springframework.stereotype.Service;
 /** Stage 1 Facade: callers do not coordinate model calls, validation, or resource construction. */
 @Service
 public class StudyAssistantFacade {
+    public com.eecs3311.backend.assessment.FlashcardDeck generateFlashcards(Course course,
+            com.eecs3311.backend.assessment.FlashcardRequest request, List<LearningMaterial> materials) {
+        return (com.eecs3311.backend.assessment.FlashcardDeck) resources.createResource("FlashcardDeck", course,
+                assessmentAgent.generateFlashcards(course, request, materials), request);
+    }
+    private final AssessmentAgent assessmentAgent;
     public ContentAgent.AnswerDraft answerQuestion(Course course, String question,
             List<LearningMaterial> materials, List<ChatTurn> history) {
         return contentAgent.answerQuestion(course, question, materials, history);
@@ -25,7 +31,8 @@ public class StudyAssistantFacade {
     private final StudyResourceFactory resources;
     private final PlanningAgent planningAgent;
     private final StudyScheduler scheduler;
-    public StudyAssistantFacade(ContentAgent contentAgent, StudyResourceFactory resources, PlanningAgent planningAgent, StudyScheduler scheduler) {
+    public StudyAssistantFacade(ContentAgent contentAgent, StudyResourceFactory resources, PlanningAgent planningAgent, StudyScheduler scheduler, AssessmentAgent assessmentAgent) {
+        this.assessmentAgent = assessmentAgent;
         this.contentAgent = contentAgent;
         this.resources = resources;
         this.planningAgent = planningAgent; this.scheduler = scheduler;

@@ -39,6 +39,9 @@ public class StudyPlannerCli {
             System.out.println("       java cli/StudyPlannerCli.java regenerate-concepts COURSE_ID MATERIAL_ID");
             System.out.println("Set STUDY_USERNAME (default student), STUDY_PASSWORD, and optionally BACKEND_URL.");
             System.out.println("       java cli/StudyPlannerCli.java profile");
+            System.out.println("       java cli/StudyPlannerCli.java flashcards COURSE_ID REQUEST_JSON_FILE");
+            System.out.println("       java cli/StudyPlannerCli.java decks COURSE_ID [BEFORE_SEQUENCE]");
+            System.out.println("       java cli/StudyPlannerCli.java deck COURSE_ID DECK_ID");
             System.out.println("       java cli/StudyPlannerCli.java save-profile PROFILE_JSON_FILE");
             System.out.println("       java cli/StudyPlannerCli.java plan COURSE_ID");
             System.out.println("       java cli/StudyPlannerCli.java generate-plan COURSE_ID REQUEST_JSON_FILE");
@@ -51,6 +54,8 @@ public class StudyPlannerCli {
             return;
         }
         boolean valid = switch (args[0]) {
+            case "flashcards", "deck" -> args.length == 3;
+            case "decks" -> args.length == 2 || args.length == 3;
             case "list" -> args.length == 1;
             case "profile" -> args.length == 1;
             case "save-profile", "plan" -> args.length == 2;
@@ -82,6 +87,22 @@ public class StudyPlannerCli {
         String authorization = "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3))
                 .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER)).build();
+        if (java.util.Set.of("flashcards", "decks", "deck").contains(args[0])) {
+            String url = base + "/api/courses/" + UUID.fromString(args[1]) + "/flashcards";
+            if (args[0].equals("deck")) url += "/" + UUID.fromString(args[2]);
+            if (args[0].equals("decks") && args.length == 3) url += "?before=" + Long.parseLong(args[2]);
+            var flashcards = request(url, authorization);
+            if (args[0].equals("flashcards")) {
+                byte[] bytes;
+                try (var stream = Files.newInputStream(Path.of(args[2]))) { bytes = stream.readNBytes(65537); }
+                if (bytes.length > 65536) throw new IllegalArgumentException("Flashcard request file must be 64 KiB or smaller.");
+                var token = client.send(request(base + "/api/csrf", authorization).GET().build(), HttpResponse.BodyHandlers.ofString());
+                check(token);
+                flashcards.timeout(Duration.ofSeconds(200)).header("X-CSRF-TOKEN", token.headers().firstValue("X-CSRF-TOKEN").orElseThrow())
+                        .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofByteArray(bytes));
+            }
+            var result = client.send(flashcards.build(), HttpResponse.BodyHandlers.ofString()); check(result); System.out.println(result.body()); return;
+        }
         if (java.util.Set.of("profile", "save-profile", "plan", "generate-plan", "events", "add-event", "remove-event").contains(args[0])) {
             planning(client, base, authorization, args); return;
         }

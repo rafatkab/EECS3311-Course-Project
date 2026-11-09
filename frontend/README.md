@@ -81,3 +81,25 @@ form interaction is temporarily disabled during a request. Current form values a
 preserved on failure. Dates display in the saved plan's time zone. Busy/quiz/exam
 inputs use the saved profile's time zone. Other courses' stored events also block time.
 The full F10 calendar interface remains pending.
+## F07 flashcards
+
+Expand **Flashcards** in a course. Set the maximum, optional material selection,
+and optional topic focus. Click **Generate flashcards**; the progress and error text
+show the request state. The maximum is not a promise to pad unsupported questions.
+Click a question or **Show answer** to reveal an answer and expandable sources.
+Previous/next navigation hides the next answer. Saved decks reopen without AI;
+refresh and older-deck controls load history in pages of 25. Failures keep form
+values and the visible deck. Material choices refresh after uploads.
+
+`views/FlashcardPanel.java` uses `course/FlashcardData.java` and `CourseApi` flashcard
+methods. Text is escaped and wraps directly in components. Calls run in the existing
+bounded executor. Dedicated section management, scoring, and spaced repetition are
+outside F07; a separately uploaded section can be selected as a material.
+F07 answers must appear in a cited excerpt (case and repeated whitespace are ignored).
+The AI writes the question and selects the answer; unsupported cards are skipped after repair; only validated cards are saved. Questions and citation relevance still need review.
+
+F07 count fix: short batches no longer end generation. Each new batch receives unused
+source answers; repeated questions/answers are removed. Generation continues toward
+the maximum until answers are exhausted or two batches add no cards (40 calls /
+180 seconds maximum). A smaller saved deck shows an explanation. Restart both apps
+and generate a new deck to apply this behavior to existing courses.

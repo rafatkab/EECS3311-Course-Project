@@ -19,6 +19,22 @@ import java.io.ByteArrayOutputStream;
 
 /** Real backend requests, with cookies and CSRF protection; no mock fallback data. */
 public class CourseApi {
+    public FlashcardData.Deck generateFlashcards(UUID course, FlashcardData.Request input) {
+        try {
+            String token; synchronized (this) { token = csrfToken(); }
+            return mapper.readValue(send(request("/api/courses/" + course + "/flashcards").timeout(Duration.ofSeconds(200))
+                    .header("X-CSRF-TOKEN", token).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(input))).build()).body(), FlashcardData.Deck.class);
+        } catch (IOException e) { throw new ApiFailure("Could not read the generated deck. Refresh saved decks before retrying."); }
+    }
+    public List<FlashcardData.Saved> flashcardDecks(UUID course, Long before) {
+        try { return mapper.readValue(send(request("/api/courses/" + course + "/flashcards" + (before == null ? "" : "?before=" + before)).GET().build()).body(), new TypeReference<>() { }); }
+        catch (IOException e) { throw new ApiFailure("Could not read saved flashcard decks."); }
+    }
+    public FlashcardData.Deck flashcardDeck(UUID course, UUID deck) {
+        try { return mapper.readValue(send(request("/api/courses/" + course + "/flashcards/" + deck).GET().build()).body(), FlashcardData.Deck.class); }
+        catch (IOException e) { throw new ApiFailure("Could not read the saved flashcard deck."); }
+    }
     private final String baseUrl;
     private final String authorization;
     private final ObjectMapper mapper;

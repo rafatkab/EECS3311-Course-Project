@@ -120,13 +120,16 @@ sequenceDiagram
     Service->>Course: generateStudyResource(profile, calendar, request, materials, facade)
     Course->>Facade: generateStudyPlan
     Facade->>Agent: Recommend priorities and activities from source excerpts
-    Agent->>LLM: Profile, notes, important dates, source IDs, and output schema
-    LLM-->>Agent: Topics, priorities, activities, instructions, evidence IDs
-    Agent->>Agent: Validate output; merge duplicate topics; one repair if needed
+    loop Source passages until topic target or passages exhausted
+        Agent->>LLM: Passage, profile, earlier topics, important dates, and output schema
+        LLM-->>Agent: Specific topics, activities, complete instructions, evidence IDs
+        Agent->>Agent: Validate; merge common title variants; one repair per passage
+    end
     Agent-->>Facade: Validated Draft
     Facade->>Scheduler: Allocate future times around conflicts and weekly budget
     Scheduler-->>Facade: Valid session start times
     Facade->>Factory: createResource(StudyPlan, draft, starts)
+    Factory->>Factory: Assign topics; give revisits different practice/review tasks
     Factory-->>Service: StudyPlan and StudySessions (via Facade / Course)
     rect rgb(235, 245, 235)
         Note over Service,Repo: Short database transaction; no transaction during model generation
@@ -166,7 +169,15 @@ The full calendar interface and Course/Quiz observer subjects remain future work
 F06 uses Facade, Singleton, Simple Factory, and Observer; Strategy remains pending.
 
 Limits: 28 availability windows, 50 materials / 1,000,000 extracted characters per
-course, six representative source excerpts, and two model calls including repair.
+course, six representative source excerpts, up to two calls per passage (12 total), and a shared 180-second generation deadline.
 Recommendations may miss course topics or contain inaccurate advice despite valid
 quotations. Slot allocation is deterministic; semantic recommendation quality still
 requires review. Saved plans/profile/calendar can be viewed without a model.
+
+Topic diversity fix: PlanningAgent discovers up to 12 specific topics passage by passage,
+passing earlier topic names to discourage duplicates. It no longer relies on one broad
+overview response. The factory gives revisits different practice/review tasks, retaining
+the original citations. Instructions must end in sentence punctuation; invalid output
+gets one repair for its passage, and failure preserves the previous plan/calendar.
+The small model can still overlook concepts or give semantically similar topics.
+Regenerate a saved plan after updating to apply this behavior.

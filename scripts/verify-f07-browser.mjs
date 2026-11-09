@@ -1,0 +1,67 @@
+// Scripted protocol verification; this fixture does not measure model quality.
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+const require = createRequire(import.meta.url);
+const { chromium } = require('../frontend/target/browser-tools/node_modules/playwright-core');
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
+const page = await browser.newPage(); page.setDefaultTimeout(30_000);
+const headers = { Authorization: 'Basic ' + Buffer.from(process.env.STUDY_USERNAME + ':' + process.env.STUDY_PASSWORD).toString('base64') };
+const courses = await (await fetch('http://localhost:8091/api/courses', { headers })).json();
+const course = courses.find(c => c.name === 'CLI verification course');
+const materials = await (await fetch(`http://localhost:8091/api/courses/${course.courseId}/materials`, { headers })).json();
+const pdf = materials.find(m => m.fileName.endsWith('.pdf'));
+const read = async () => (await fetch(`http://localhost:8091/api/courses/${course.courseId}/flashcards`, { headers })).json();
+const mode = async value => fetch('http://127.0.0.1:8092/mode', { method: 'POST', body: JSON.stringify({ mode: value }) });
+const idle = () => page.waitForFunction(() => !document.querySelector('#flashcards > div').inert);
+const login = async () => {
+  await page.goto('http://localhost:8090');
+  await page.locator('#username input').fill(process.env.STUDY_USERNAME);
+  await page.locator('#password input').fill(process.env.STUDY_PASSWORD);
+  await page.locator('#sign-in').click();
+  await page.getByRole('button', { name: 'Open course CLI verification course', exact: true }).click();
+  await page.getByText('Flashcards', { exact: true }).click();
+  await page.locator('#flashcards').waitFor(); await idle();
+};
+try {
+  await login();
+  await page.locator('#flashcard-limit input').fill('4'); await page.locator('#flashcard-limit input').press('Tab');
+  await page.locator('#flashcard-focus input').fill('course');
+  await page.locator('#flashcard-materials input').click();
+  await page.getByRole('option', { name: pdf.fileName, exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.locator('#flashcard-generate').click();
+  await page.getByText('Generating and checking flashcards…', { exact: true }).waitFor();
+  await page.getByText('Card 1 of 4', { exact: true }).waitFor(); await idle();
+  assert.equal(await page.locator('#flashcard-answer').isVisible(), false);
+  await page.locator('#flashcard-question').click(); await page.locator('#flashcard-answer').waitFor();
+  assert.ok((await page.locator('#flashcard-answer').innerText()).length > 10);
+  await page.locator('#flashcard-next').click(); await page.getByText('Card 2 of 4', { exact: true }).waitFor();
+  assert.equal(await page.locator('#flashcard-answer').isVisible(), false);
+  await page.locator('#flashcard-flip').click();
+  await page.locator('#flashcard-answer').waitFor();
+  assert.equal(await page.locator('#flashcard-answer').isVisible(), true);
+  await page.locator('#flashcard-previous').click(); await page.getByText('Card 1 of 4', { exact: true }).waitFor();
+  const decks = await read(); assert.equal(decks.length, 2);
+  const latest = await (await fetch(`http://localhost:8091/api/courses/${course.courseId}/flashcards/${decks[0].resourceId}`, { headers })).json();
+  assert.equal(latest.request.materialIds.length, 1); assert.equal(latest.cards.length, 4);
+  await mode('invalid'); await page.locator('#flashcard-generate').click();
+  await page.locator('#flashcards .error-message').filter({ hasText: 'valid flashcards' }).waitFor(); await idle();
+  assert.equal((await read()).length, 2);
+  assert.equal(await page.locator('#flashcard-focus input').inputValue(), 'course');
+  await mode('partial'); await page.locator('#flashcard-generate').click();
+  await page.getByText('Card 1 of 3', { exact: true }).waitFor(); await idle();
+  await page.getByText(/Generated 3 of up to 4 cards/).waitFor();
+  assert.equal((await read()).length, 3);
+  await page.reload(); await login();
+  await page.locator('#flashcard-saved').click();
+  await page.getByRole('option').first().click();
+  await page.getByText('Card 1 of 3', { exact: true }).waitFor(); await idle();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#flashcard-flip').click();
+  await page.locator('#flashcard-answer').waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  const layout = await page.locator('#flashcard-answer').evaluate(el => ({ scroll: el.scrollWidth, width: el.clientWidth, height: el.clientHeight }));
+  assert.ok(layout.scroll <= layout.width + 1 && layout.height > 60);
+  console.log('PASS: F07 selection, generation, flip/navigation, failure preservation, saved reopening, and mobile wrapping. Scripted provider only.');
+} catch (error) { console.log(error.stack); process.exitCode = 1; }
+finally { await mode('valid'); await browser.close(); }

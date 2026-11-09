@@ -56,6 +56,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Real planning generation failed.' }
         $plan = $planJson | ConvertFrom-Json
         if ($plan.model -ne $Model -or $plan.sessions.Count -ne 4 -or $plan.priorityTopics.Count -lt 1) { throw 'Incomplete study plan.' }
+        if ($plan.priorityTopics.Count -lt 3) { throw 'Biology plan did not discover at least three specific topics across its passages.' }
+        if (@($plan.sessions.instructions | Sort-Object -Unique).Count -ne 4) { throw 'Study sessions repeated identical instructions.' }
         foreach ($session in $plan.sessions) {
             $sessionStart = [DateTimeOffset]::Parse($session.startTime)
             $sessionEnd = $sessionStart.AddMinutes($session.duration)

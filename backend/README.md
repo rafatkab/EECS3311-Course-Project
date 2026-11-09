@@ -216,3 +216,47 @@ H2 adds `study_profiles`, `study_plans`, and `calendar_events` on startup withou
 existing data. The full F10 calendar UI, Course/Quiz subjects, and automatic assessment
 integration remain future work. This feature uses Facade, Singleton, Simple Factory,
 and Observer; it adds no application dependencies or model settings.
+## F07 flashcards
+
+- `POST /api/courses/{id}/flashcards`: generate and save a new deck (201). JSON:
+  `{"cardLimit":5,"materialIds":[],"focus":""}`. Empty selection means all course materials.
+- `GET /api/courses/{id}/flashcards[?before=SEQUENCE]`: newest saved deck metadata,
+  up to 25 per page. Use the last sequence for the next page.
+- `GET /api/courses/{id}/flashcards/{deckId}`: full saved deck, without calling AI.
+
+All routes check ownership; POST requires CSRF. Limits: 1–20 cards, 50 materials,
+1,000,000 extracted characters, topic up to 200 characters. Selected IDs must belong
+to the course. Retrieval supplies up to six 700-character excerpts. AssessmentAgent
+makes batches of up to three cards, validates the structured output/source IDs,
+repairs once per batch, and removes normalized duplicate questions. Short factual
+answers are valid; fewer cards are accepted. Bound: 40 calls / 180 seconds. Empty or
+invalid final output saves nothing. A per-course generation lock returns 409 for
+competing requests. Provider failures keep existing decks.
+
+`Course.generateStudyResource` calls `StudyAssistantFacade.generateFlashcards`, then
+`AssessmentAgent.generateFlashcards` and singleton `AIEngine.generate`. The factory
+creates `FlashcardDeck`; `viewCards` supplies its cards. H2 adds `flashcard_decks`
+without deleting existing data. Each deck snapshots its request, cards, quotations,
+model, and token/call counts. Stored quotes need human review for relevance/accuracy.
+CLI adds `flashcards COURSE_ID REQUEST_JSON_FILE`, `decks COURSE_ID [BEFORE_SEQUENCE]`,
+and `deck COURSE_ID DECK_ID`. No new dependencies or provider configuration.
+F07 answers must appear in a cited excerpt (case and repeated whitespace are ignored).
+The AI writes the question and selects the answer; unsupported cards are skipped after repair; only validated cards are saved. Questions and citation relevance still need review.
+
+F06 topic-diversity update: the planner now checks separate source passages for up to
+12 specific topics, instead of repeating a single short overview. Repeated topics
+receive different practice/review tasks. Instructions must be complete sentences.
+Discovery is bounded to six passages, two calls per passage, and 180 seconds total.
+Restart the backend and generate a new plan to update an existing saved schedule.
+
+F07 count fix: short batches no longer end generation. Each new batch receives unused
+source answers; repeated questions/answers are removed. Generation continues toward
+the maximum until answers are exhausted or two batches add no cards (40 calls /
+180 seconds maximum). A smaller saved deck shows an explanation. Restart both apps
+and generate a new deck to apply this behavior to existing courses.
+
+F07 validation recovery: mixed batches retain only valid cards. Single-fact retries
+skip repeatedly unusable facts. If later model output fails, already validated cards
+can be saved as a smaller new deck with an explanation; old decks remain unchanged.
+No new deck is saved when no cards pass validation. Provider/transport failures still
+show an error rather than inventing cards.
