@@ -126,3 +126,12 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     responses_json CLOB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS quiz_attempts_quiz_sequence ON quiz_attempts(quiz_id,sequence);
+
+CREATE TABLE IF NOT EXISTS quiz_grades (
+    attempt_id UUID PRIMARY KEY REFERENCES quiz_attempts(attempt_id) ON DELETE CASCADE,
+    quiz_id UUID NOT NULL REFERENCES quizzes(resource_id) ON DELETE CASCADE,
+    grade_id UUID NOT NULL UNIQUE,
+    graded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    grade_json CLOB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quiz_grades_quiz ON quiz_grades(quiz_id);

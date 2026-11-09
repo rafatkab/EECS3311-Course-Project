@@ -23,6 +23,7 @@ public final class Quiz extends StudyResource {
     }
     public record View(UUID resourceId, Instant createdAt, QuizRequest request, List<QuizQuestion.PublicQuestion> questions, String model) { }
     public View startQuiz() { return new View(getResourceId(), getCreatedAt(), request, questions.stream().map(QuizQuestion::publicView).toList(), model); }
+    public GradeResult submitQuiz(QuizAttempt attempt,QuizGradingService gradingService) { return gradingService.gradeQuiz(this,attempt); }
     public QuizRequest getRequest() { return request; }
     public List<QuizQuestion> getQuestions() { return questions; }
     public String getModel() { return model; }

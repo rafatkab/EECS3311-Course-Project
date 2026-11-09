@@ -32,9 +32,11 @@ const server = http.createServer(async (request, response) => {
     const planningRequest = body.response_format?.json_schema?.schema?.properties?.topics;
     const flashcardRequest = body.response_format?.json_schema?.schema?.properties?.cards;
     const quizRequest = body.response_format?.json_schema?.schema?.properties?.distractors;
+    const gradingRequest = body.response_format?.json_schema?.schema?.properties?.verdict;
     const input = JSON.parse(body.messages[1].content);
     const sourceExcerpt = (input.evidenceOptions || input.sources)?.[0]?.quote || input.source;
-    const validContent = quizRequest ? { answer: input.targetFact.split(/\s+/).slice(0, 3).join(' '),
+    const credit = input.studentResponse?.includes('partial') ? 0.5 : input.studentResponse?.includes('wrong') ? 0 : 0;
+    const validContent = gradingRequest ? { verdict: credit === 0.5 ? 'PARTIAL' : 'INCORRECT', reason: credit === 0.5 ? 'MISSING_PART' : 'WRONG_CONCEPT' } : quizRequest ? { answer: input.targetFact.split(/\s+/).slice(0, 3).join(' '),
       distractors: input.questionType === 'MULTIPLE_CHOICE' ? ['The application must concatenate SQL input.', 'All storage belongs in the user interface.', 'Every class must share global mutable state.'] : []
     } : flashcardRequest ? { cards: Array.from({ length: input.batchLimit }, (_, i) => ({
       question: `What does repository example ${input.alreadyAskedQuestions.length + i + 1} separate?`,
@@ -50,7 +52,7 @@ const server = http.createServer(async (request, response) => {
       ('Seam carving resizes an image by finding low-energy connected paths through its pixels and removing those paths while preserving important content. '.repeat(10))
       + '\n\nA long reference: https://example.test/' + 'source-reference-'.repeat(18)
       + '\n\nThis is the final sentence of the complete saved answer.';
-    const content = mode === 'invalid' || mode === 'partial' && flashcardRequest && input.alreadyAskedQuestions.length > 0 ? 'invalid JSON' : JSON.stringify(validContent);
+    const content = mode === 'invalid' || mode === 'grading-invalid' && gradingRequest || mode === 'partial' && flashcardRequest && input.alreadyAskedQuestions.length > 0 ? 'invalid JSON' : JSON.stringify(validContent);
     response.setHeader('Content-Type', 'application/json');
     response.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content } }], usage: { prompt_tokens: 30, completion_tokens: 12 } }));
   } catch {

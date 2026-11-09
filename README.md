@@ -221,8 +221,8 @@ most two model calls. Review AI advice against the source; citations do not prov
 recommendation quality. No additional AI configuration or dependency is needed.
 
 F06 includes UC-11 profile maintenance and the calendar support needed for scheduling.
-The full F10 calendar interface and automatic quiz-result integration remain pending;
-assessment notes are entered manually until F08/F09 exist. See the
+The full F10 calendar interface remains pending; F09 now feeds saved quiz results into planning;
+manual assessment notes remain available alongside saved quiz grades. See the
 [F06 UML and sequence](documentation/diagrams/stage2-f06.md).
 ## Flashcards (F07)
 
@@ -280,9 +280,9 @@ to short answer. **Generate quiz** saves a new quiz only when the requested coun
 valid. Insufficient material or failed AI generation leaves earlier quizzes intact.
 
 Choose a saved quiz, click **Start quiz**, answer questions, and **Save quiz draft**
-to resume later from Recent attempts. **Finish and save answers** requires all
+to resume later from Recent attempts. **Submit quiz for grading** requires all
 answers, freezes that attempt, and reveals the expected answers and source quotes.
-Automatic scores and feedback belong to F09 and are not implemented yet.
+F09 now adds automatic scores, feedback, and weak areas when an attempt is submitted.
 
 ```powershell
 java cli/StudyPlannerCli.java generate-quiz COURSE_ID documentation/samples/quiz-request.json
@@ -312,3 +312,27 @@ selects the removed phrase and MCQ distractors; Java constructs the stem from th
 original fact. Restoring the expected phrase must reproduce the source statement.
 This avoids mismatched generated questions/keys. Difficulty guides which phrase
 is removed; semantic difficulty and distractor ambiguity still need review.
+
+## Automatic quiz grading (F09)
+
+In **Quizzes**, answer every question and click **Submit quiz for grading**. Results
+show points, percentage, per-question feedback, weak areas, expected answers, and
+source quotations. Choice questions are graded from the saved key. Exact short
+answers receive credit without AI; other short answers are evaluated by Ollama using
+the source, key, and rubric. AI can award full, half, or zero credit for each question.
+
+If grading fails, the attempt stays editable and your form answers remain available:
+save a draft or retry. A successful submission saves the finished attempt and grade
+atomically. Reopening results does not call the model again. Older finished F08
+attempts offer **Grade saved attempt**. To try different answers, start a new attempt.
+
+`finish-quiz` now grades automatically. View a saved result with `quiz-attempt`, or
+use `grade-quiz COURSE_ID QUIZ_ID ATTEMPT_ID` for an older finished attempt. The
+latest graded attempts' weak areas guide your next generated study plan; existing
+plans stay unchanged until regenerated. Review AI-assisted marks against the sources.
+
+F09 follows Quiz → QuizGradingService → GradingStrategy → deterministic/AI strategy
+→ GradeResult, with the singleton AIEngine used when needed. Strategy is the fifth
+planned design pattern. See [F09 diagrams](documentation/diagrams/stage2-f09.md).
+Verification: `scripts/verify-f01.ps1 -IncludeF09` uses a scripted test provider;
+`scripts/verify-f09-live.ps1` uses real local Ollama with a controlled biology quiz.

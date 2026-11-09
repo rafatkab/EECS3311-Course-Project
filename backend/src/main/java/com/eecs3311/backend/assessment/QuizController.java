@@ -19,4 +19,5 @@ public class QuizController {
     @GetMapping("/{quiz}/attempts/{attempt}") public QuizAttempt.View attempt(Principal user, @PathVariable UUID course, @PathVariable UUID quiz, @PathVariable UUID attempt) { return service.attempt(user.getName(), course, quiz, attempt); }
     @PutMapping("/{quiz}/attempts/{attempt}") public QuizAttempt.View save(Principal user, @PathVariable UUID course, @PathVariable UUID quiz, @PathVariable UUID attempt, @RequestBody QuizAttempt.Input input) { return service.save(user.getName(), course, quiz, attempt, input, false); }
     @PostMapping("/{quiz}/attempts/{attempt}/submit") public QuizAttempt.View submit(Principal user, @PathVariable UUID course, @PathVariable UUID quiz, @PathVariable UUID attempt, @RequestBody QuizAttempt.Input input) { return service.save(user.getName(), course, quiz, attempt, input, true); }
+    @PostMapping("/{quiz}/attempts/{attempt}/grade") public QuizAttempt.View grade(Principal user,@PathVariable UUID course,@PathVariable UUID quiz,@PathVariable UUID attempt) { return service.gradeSaved(user.getName(),course,quiz,attempt); }
 }

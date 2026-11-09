@@ -116,6 +116,15 @@ be saved or discarded before switching quizzes or generating another one.
 Saved quizzes and the latest 25 attempts are available without AI. Drafts hide keys;
 finished attempts show source-backed expected answers and expandable quotations.
 Question and answer text is escaped and wraps at phone widths. A version conflict
-requires reopening the attempt before another save. This feature does not grade:
-automatic scores and feedback remain F09. Material selection represents separately
+requires reopening the attempt before another save. F09 now supplies automatic scores and feedback. Material selection represents separately
 uploaded sections; a dedicated section editor is not included.
+## F09 results
+
+The quiz finish action is now **Submit quiz for grading**. `QuizData.State.gradeResult`
+carries totals, question marks/feedback, weak areas, and provenance. `QuizPanel`
+displays them alongside the existing answer/source review, with wrapped escaped text.
+Pending grading disables the panel; failure keeps answers and the draft version so
+the student can save or retry. Results reopen without AI. Older finished attempts
+without a result show **Grade saved attempt**, using `CourseApi.gradeQuizAttempt`.
+AI-assisted feedback is identified; exact/choice marks are labeled Answer key.
+Starting a new attempt is the way to retry after a successful submission.

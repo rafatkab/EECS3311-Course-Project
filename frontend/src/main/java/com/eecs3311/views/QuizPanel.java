@@ -82,7 +82,7 @@ public class QuizPanel extends Div {
         quiz = value; state = null; dirty = false; responses.clear(); output.removeAll();
         output.add(new H3("Saved quiz"), new Paragraph(value.questions().size() + " questions · " + value.request().difficulty() + " · " + value.model()));
         var start = new Button("Start quiz", e -> run(() -> api.startQuiz(course, quiz.resourceId()), this::showAttempt, "Starting quiz…")); start.setId("quiz-start");
-        output.add(start, new Paragraph("Answer keys appear only after you finish an attempt. Automatic scores and feedback are planned for F09."));
+        output.add(start, new Paragraph("Submit your answers for a score, feedback, weak areas, and source-based answer review. Saved drafts remain editable."));
         run(() -> api.quizAttempts(course, quiz.resourceId()), attempts -> {
             if (attempts.isEmpty()) return;
             var select = new Select<Attempt>(); select.setLabel("Recent attempts (latest 25)"); select.setItems(attempts); select.setWidthFull(); select.setId("quiz-attempts");
@@ -96,6 +96,18 @@ public class QuizPanel extends Div {
         boolean finished = value.attempt().submittedAt()!=null;
         output.removeAll(); output.getElement().setAttribute("data-attempt-id", value.attempt().attemptId().toString());
         output.add(new H3(finished ? "Finished quiz — answer review" : "Quiz attempt"));
+        if(value.gradeResult()!=null) {
+            var grade=value.gradeResult();
+            Div result=new Div(new H3("Quiz results"),new Paragraph(grade.feedback())); result.setId("quiz-grade");
+            result.getElement().setAttribute("data-grade-id",grade.gradeId().toString());
+            if(grade.weakAreas().isEmpty()) result.add(new Paragraph("No weak areas were identified in this attempt."));
+            else {
+                result.add(new H4("Areas to review"));
+                for(String area:grade.weakAreas()) { var text=new Paragraph(area); text.getStyle().set("white-space","pre-wrap").set("overflow-wrap","anywhere"); result.add(text); }
+            }
+            result.add(new Paragraph(grade.modelCalls()>0?"Includes AI-assisted grading. Review the feedback against the sources. Saved weak areas will guide your next generated study plan.":"Graded from saved answer criteria without a model call. Saved weak areas will guide your next generated study plan."));
+            output.add(result);
+        }
         for (int i=0;i<quiz.questions().size();i++) {
             var question = quiz.questions().get(i); var prompt = new Paragraph((i+1) + ". " + question.question());
             prompt.getStyle().set("white-space", "pre-wrap").set("overflow-wrap", "anywhere");
@@ -114,18 +126,25 @@ public class QuizPanel extends Div {
                 var answer = new Paragraph("Expected answer: " + key.expectedAnswer()); answer.getStyle().set("white-space", "pre-wrap").set("overflow-wrap", "anywhere"); row.add(answer);
                 for (var citation : key.citations()) { var quote = new Paragraph(citation.quote()); quote.getStyle().set("white-space", "pre-wrap"); row.add(new Details("Source: " + citation.fileName(), quote)); }
             });
+            if(value.gradeResult()!=null) value.gradeResult().questions().stream().filter(g -> g.questionId().equals(question.questionId())).findFirst().ifPresent(g -> {
+                var feedback=new Paragraph(g.earnedPoints()+" / "+g.maxPoints()+" points · "+(g.method().equals("AI")?"AI-assisted":"Answer key")+"\n"+g.feedback());
+                feedback.addClassName("question-grade"); feedback.getStyle().set("white-space","pre-wrap").set("overflow-wrap","anywhere"); row.add(feedback);
+            });
             output.add(row);
         }
         if (!finished) {
             var save = new Button("Save quiz draft", e -> save(false)); save.setId("quiz-save");
-            var finish = new Button("Finish and save answers", e -> save(true)); finish.setId("quiz-finish");
+            var finish = new Button("Submit quiz for grading", e -> save(true)); finish.setId("quiz-finish");
             output.add(save, finish, new Button("Discard unsaved changes", e -> run(() -> api.quizAttempt(course, quiz.resourceId(), state.attempt().attemptId()), this::showAttempt, "Reopening saved answers…")));
-        } else output.add(new Paragraph("Answers are saved. Automatic grading and feedback will be added in F09."));
+        } else if(value.gradeResult()==null) {
+            var grade=new Button("Grade saved attempt",e -> run(() -> api.gradeQuizAttempt(course,quiz.resourceId(),state.attempt().attemptId()),this::showAttempt,"Grading saved answers…"));
+            grade.setId("quiz-grade-saved"); output.add(new Paragraph("This finished attempt has no saved grade yet."),grade);
+        }
         output.add(new Button("Back to saved quiz", e -> { if (dirty) error.setText("Save or discard your unsaved answers first."); else showQuiz(quiz); }));
     }
     private void save(boolean finish) {
         var input = new QuizData.Input(state.attempt().version(), Map.copyOf(responses));
-        run(() -> api.saveQuizAttempt(course, quiz.resourceId(), state.attempt().attemptId(), input, finish), this::showAttempt, finish ? "Finishing quiz…" : "Saving quiz draft…");
+        run(() -> api.saveQuizAttempt(course, quiz.resourceId(), state.attempt().attemptId(), input, finish), this::showAttempt, finish ? "Grading your answers…" : "Saving quiz draft…");
     }
     private <T> void run(Supplier<T> task, Consumer<T> success, String message) {
         UI ui = getUI().orElse(UI.getCurrent()); pending++; getElement().setProperty("inert", true); progress.setText(message); error.setText("");

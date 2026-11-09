@@ -1,7 +1,7 @@
 # Stage 2 — F08 Quiz Generation
 
 References: Stage 1 F08, UC-08, SD04 quiz branch, Task 4 F08, and original UML.
-F08 generates and stores quizzes and attempts. F09 automatic scoring/feedback remains pending.
+F08 generates and stores quizzes and attempts. F09 now adds automatic scoring and feedback.
 
 ```mermaid
 classDiagram
@@ -98,8 +98,8 @@ H2 adds quizzes and quiz_attempts. Quiz history uses stable pages of 25. The lat
 optimistic versions prevent silent overwrites from another window. A finish requires
 all answers, freezes that attempt, and exposes its answer key and quotations. Ordinary
 quiz/start/draft responses omit the key. Every operation checks ownership; writes need
-CSRF. A finished answer review is not a grade: F09 scoring, feedback, Strategy, and
-Quiz.submitQuiz grading orchestration remain pending. Quiz calendar dates remain F10.
+CSRF. F09 now adds scoring, feedback, Strategy, and Quiz.submitQuiz grading orchestration;
+see stage2-f09.md. Quiz calendar dates remain F10.
 
 F08 uses source-based fill-in-the-blank questions for both supported types. The AI
 selects the removed phrase and MCQ distractors; Java constructs the stem from the

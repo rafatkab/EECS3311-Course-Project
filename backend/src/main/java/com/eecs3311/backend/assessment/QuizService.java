@@ -15,8 +15,14 @@ public class QuizService {
     private final MaterialRepository materials;
     private final StudyAssistantFacade assistant;
     private final QuizRepository quizzes;
+    private final GradeRepository grades;
+    private final org.springframework.beans.factory.ObjectProvider<QuizGradingService> grading;
+    private final QuizSubmissionPersistence submissions;
+    private final ReentrantLock[] gradingLocks = IntStream.range(0,64).mapToObj(i -> new ReentrantLock()).toArray(ReentrantLock[]::new);
     private final ReentrantLock[] locks = IntStream.range(0,64).mapToObj(i -> new ReentrantLock()).toArray(ReentrantLock[]::new);
-    public QuizService(CourseService courses, MaterialRepository materials, StudyAssistantFacade assistant, QuizRepository quizzes) {
+    public QuizService(CourseService courses, MaterialRepository materials, StudyAssistantFacade assistant, QuizRepository quizzes,
+            GradeRepository grades,org.springframework.beans.factory.ObjectProvider<QuizGradingService> grading,QuizSubmissionPersistence submissions) {
+        this.grades=grades; this.grading=grading; this.submissions=submissions;
         this.courses = courses; this.materials = materials; this.assistant = assistant; this.quizzes = quizzes;
     }
     public Quiz.View generate(String username, UUID courseId, QuizRequest request) {
@@ -59,6 +65,12 @@ public class QuizService {
         return view(quiz, quizzes.attempt(quizId, attempt).orElseThrow(() -> new AiFailure(404, "Quiz attempt not found.")));
     }
     public QuizAttempt.View save(String user, UUID course, UUID quizId, UUID attemptId, QuizAttempt.Input input, boolean submit) {
+        courses.getCourse(user,course);
+        var lock=gradingLocks[Math.floorMod(attemptId.hashCode(),gradingLocks.length)];
+        if(!lock.tryLock()) throw new AiFailure(409,"This attempt is being graded or saved. Try again shortly.");
+        try { return saveLocked(user,course,quizId,attemptId,input,submit); } finally { lock.unlock(); }
+    }
+    private QuizAttempt.View saveLocked(String user, UUID course, UUID quizId, UUID attemptId, QuizAttempt.Input input, boolean submit) {
         var quiz = owned(user, course, quizId);
         var previous = quizzes.attempt(quizId, attemptId).orElseThrow(() -> new AiFailure(404, "Quiz attempt not found."));
         if (previous.submittedAt() != null) throw new AiFailure(409, "This attempt is finished. Start a new attempt to answer again.");
@@ -76,10 +88,25 @@ public class QuizService {
         });
         if (submit && quiz.getQuestions().stream().anyMatch(q -> clean.getOrDefault(q.questionId(), "").isBlank())) throw new AiFailure(400, "Answer every question before finishing. You can save an incomplete draft.");
         var saved = new QuizAttempt(attemptId, quizId, previous.createdAt(), submit ? Instant.now() : null, previous.version()+1, clean);
-        if (!quizzes.update(saved)) throw new AiFailure(409, "This attempt changed in another window. Reopen it before saving.");
+        if(submit) {
+            var result=quiz.submitQuiz(saved,grading.getObject());
+            submissions.submit(saved,result);
+        } else if (!quizzes.update(saved)) throw new AiFailure(409, "This attempt changed in another window. Reopen it before saving.");
         return view(quiz, saved);
     }
+    public QuizAttempt.View gradeSaved(String user,UUID course,UUID quizId,UUID attemptId) {
+        var quiz=owned(user,course,quizId);
+        var lock=gradingLocks[Math.floorMod(attemptId.hashCode(),gradingLocks.length)];
+        if(!lock.tryLock()) throw new AiFailure(409,"This attempt is already being graded. Try again shortly.");
+        try {
+            var attempt=quizzes.attempt(quizId,attemptId).orElseThrow(() -> new AiFailure(404,"Quiz attempt not found."));
+            if(attempt.submittedAt()==null) throw new AiFailure(400,"Submit the completed attempt before requesting its grade.");
+            if(grades.find(quizId,attemptId).isEmpty()) grades.save(quiz.submitQuiz(attempt,grading.getObject()));
+            return view(quiz,attempt);
+        } finally { lock.unlock(); }
+    }
     private QuizAttempt.View view(Quiz quiz, QuizAttempt attempt) {
-        return new QuizAttempt.View(quiz.startQuiz(), attempt, attempt.submittedAt() == null ? List.of() : quiz.getQuestions());
+        return new QuizAttempt.View(quiz.startQuiz(), attempt, attempt.submittedAt() == null ? List.of() : quiz.getQuestions(),
+                attempt.submittedAt()==null?null:grades.find(quiz.getResourceId(),attempt.attemptId()).orElse(null));
     }
 }

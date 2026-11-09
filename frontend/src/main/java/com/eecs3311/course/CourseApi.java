@@ -41,6 +41,9 @@ public class CourseApi {
         catch (IOException e) { throw new ApiFailure("Could not read quiz attempts."); }
     }
     public QuizData.State startQuiz(UUID course, UUID quiz) { return quizRead(quizWrite(quizPath(course) + "/" + quiz + "/attempts", null, "POST"), QuizData.State.class); }
+    public QuizData.State gradeQuizAttempt(UUID course,UUID quiz,UUID attempt) {
+        return quizRead(quizWrite(quizPath(course)+"/"+quiz+"/attempts/"+attempt+"/grade",null,"POST"),QuizData.State.class);
+    }
     public QuizData.State quizAttempt(UUID course, UUID quiz, UUID attempt) { return quizRead(send(request(quizPath(course) + "/" + quiz + "/attempts/" + attempt).GET().build()).body(), QuizData.State.class); }
     public QuizData.State saveQuizAttempt(UUID course, UUID quiz, UUID attempt, QuizData.Input input, boolean submit) {
         return quizRead(quizWrite(quizPath(course) + "/" + quiz + "/attempts/" + attempt + (submit ? "/submit" : ""), input, submit ? "POST" : "PUT"), QuizData.State.class);

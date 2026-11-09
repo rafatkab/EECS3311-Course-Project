@@ -60,6 +60,7 @@ class QuizApiTests {
                 else {
                     var body = JSON.readTree(request);
                     var input = JSON.readTree(body.path("messages").get(1).path("content").asText());
+                    boolean grading = body.path("response_format").path("json_schema").path("schema").path("properties").has("verdict");
                     String fact = input.path("targetFact").asText();
                     String answer = mode.equals("duplicate") ? "The Repository pattern" : java.util.Arrays.stream(fact.split("\\s+")).limit(3).collect(java.util.stream.Collectors.joining(" "));
                     if (mode.equals("repeat-term")) answer = "SQL";
@@ -67,6 +68,7 @@ class QuizApiTests {
                     boolean multiple = input.path("questionType").asText().equals("MULTIPLE_CHOICE");
                     String content = JSON.writeValueAsString(Map.of("answer", answer, "distractors", multiple
                             ? mode.equals("bad-distractors") ? List.of(answer, answer, answer) : List.of("Storage must always be embedded in the user interface.", "Prepared statements require concatenating user input.", "Every application must share one global SQL connection.") : List.of()));
+                    if (grading) content = JSON.writeValueAsString(Map.of("verdict", "INCORRECT", "reason", "WRONG_CONCEPT"));
                     if (mode.equals("invalid") || mode.equals("bad-prefix") && call <= 6 || mode.equals("repair") && call == 1) content = "not valid JSON";
                     var result = JSON.createObjectNode();
                     result.set("choices", JSON.valueToTree(List.of(Map.of("finish_reason", mode.equals("truncated") ? "length" : "stop", "message", Map.of("content", content)))));

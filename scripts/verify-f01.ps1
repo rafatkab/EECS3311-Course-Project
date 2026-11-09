@@ -1,6 +1,7 @@
 # Run from the repository root after backend verify and frontend production package.
 # Requires Java 17, Node, Chrome and the temporary playwright-core installation.
-param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06, [switch] $IncludeF07, [switch] $IncludeF08)
+param([switch] $IncludeF02, [switch] $IncludeF03, [switch] $IncludeF04, [switch] $IncludeF05, [switch] $IncludeF06, [switch] $IncludeF07, [switch] $IncludeF08, [switch] $IncludeF09)
+if ($IncludeF09) { $IncludeF08 = $true }
 if ($IncludeF08) { $IncludeF07 = $true }
 if ($IncludeF07) { $IncludeF06 = $true }
 if ($IncludeF06) { $IncludeF05 = $true }
@@ -8,6 +9,8 @@ if ($IncludeF05) { $IncludeF04 = $true }
 if ($IncludeF04) { $IncludeF03 = $true }
 if ($IncludeF03) { $IncludeF02 = $true }
 $ErrorActionPreference = 'Stop'
+$previousOutputEncoding = [Console]::OutputEncoding
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $repoPath = Split-Path $PSScriptRoot -Parent
 $javaPath = Join-Path $env:JAVA_HOME 'bin\java.exe'
 $backendPath = Join-Path $repoPath 'backend'
@@ -143,6 +146,14 @@ try {
             if ($LASTEXITCODE -ne 0 -or ($finished | ConvertFrom-Json).answerKey.Count -ne 4) { throw 'F08 CLI finish failed.' }
             node scripts/verify-f08-browser.mjs
             if ($LASTEXITCODE -ne 0) { throw 'F08 browser verification failed.' }
+            if ($IncludeF09) {
+                $gradeIdentifier = ($finished | ConvertFrom-Json).gradeResult.gradeId
+                if (-not $gradeIdentifier) { throw 'F09 CLI submission did not return a grade.' }
+                $graded = & $javaPath cli/StudyPlannerCli.java grade-quiz $courseIdentifier $quizIdentifier $attemptIdentifier
+                if ($LASTEXITCODE -ne 0 -or ($graded | ConvertFrom-Json).gradeResult.gradeId -ne $gradeIdentifier) { throw 'F09 cached CLI grading failed.' }
+                node scripts/verify-f09-browser.mjs
+                if ($LASTEXITCODE -ne 0) { throw 'F09 browser verification failed.' }
+            }
         }
         Stop-Process -Id $backendProcess.Id
         $backendProcess.WaitForExit()
@@ -182,6 +193,12 @@ try {
                 $restoredAttempt = & $javaPath cli/StudyPlannerCli.java quiz-attempt $courseIdentifier $quizIdentifier $attemptIdentifier
                 if ($LASTEXITCODE -ne 0 -or ($restoredAttempt | ConvertFrom-Json).answerKey.Count -ne 4) { throw 'F08 saved attempt restart check failed.' }
                 Write-Output 'PASS: F08 CLI generation, draft saving, finishing, and quiz/attempt persistence after restart without a model.'
+                if ($IncludeF09) {
+                    if (($restoredAttempt | ConvertFrom-Json).gradeResult.gradeId -ne $gradeIdentifier) { throw 'F09 grade persistence failed.' }
+                    $cachedGrade = & $javaPath cli/StudyPlannerCli.java grade-quiz $courseIdentifier $quizIdentifier $attemptIdentifier
+                    if ($LASTEXITCODE -ne 0 -or ($cachedGrade | ConvertFrom-Json).gradeResult.gradeId -ne $gradeIdentifier) { throw 'F09 offline cached grade retrieval failed.' }
+                    Write-Output 'PASS: F09 CLI score/feedback and cached grading survive restart with the model stopped.'
+                }
             }
             Write-Output 'PASS: F03 CLI and saved-summary persistence after restart without a provider. Scripted fixture only; live AI quality not verified.'
             if ($IncludeF04) {
@@ -209,4 +226,5 @@ try {
         if ($null -ne $ownedProcess -and -not $ownedProcess.HasExited) { Stop-Process -Id $ownedProcess.Id }
     }
     foreach ($key in $environmentKeys) { [Environment]::SetEnvironmentVariable($key, $previousEnvironment[$key], 'Process') }
+    [Console]::OutputEncoding = $previousOutputEncoding
 }

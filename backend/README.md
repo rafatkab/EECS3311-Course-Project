@@ -103,7 +103,7 @@ section/call counts, and provider-reported tokens (`-1` means not reported).
 create a `Summary` extending `StudyResource`. The repository persists the latest
 summary per material with a source hash. Failed generation never overwrites it.
 The simple factory constructs Summary, ConceptSet, and StudyPlan; other resource types
-are not implemented. Strategy remains future work; F06 implements Observer for study-plan calendar synchronization.
+are not implemented. F09 now implements Strategy; F06 implements Observer for study-plan calendar synchronization.
 
 The agent splits up to 32,000 characters into approximately 6000-character sections,
 summarizes each, and synthesizes multiple sections. The model selects numbered
@@ -275,7 +275,7 @@ show an error rather than inventing cards.
 - PUT `.../quizzes/{quizId}/attempts/{attemptId}`: save a full response map with its version.
 - POST `.../quizzes/{quizId}/attempts/{attemptId}/submit`: finish using the same input.
   All questions require an answer; this saves an immutable attempt and permits review.
-  F09 scoring and feedback remain pending.
+  F09 now grades submissions and returns scores, feedback, and weak areas.
 
 Every route checks course ownership; writes also need CSRF. Unknown question IDs,
 answers over 4000 characters, unlisted MCQ choices, stale versions, and updates to
@@ -300,3 +300,36 @@ selects the removed phrase and MCQ distractors; Java constructs the stem from th
 original fact. Restoring the expected phrase must reproduce the source statement.
 This avoids mismatched generated questions/keys. Difficulty guides which phrase
 is removed; semantic difficulty and distractor ambiguity still need review.
+
+## F09 grading
+
+Submitting POST `.../quizzes/{quizId}/attempts/{attemptId}/submit` now validates and
+grades all responses before committing. The response includes `gradeResult`: earned
+points, maximum points, percentage, per-question marks/feedback/methods, weak areas,
+model identity, and reported token/call counts. The client cannot supply keys or scores.
+GET of a finished attempt returns its cached result. POST `.../attempts/{attemptId}/grade`
+grades an older finished attempt once; repeated calls return the saved grade. Drafts
+must be submitted first. All routes check ownership and POST requires CSRF.
+
+`Quiz.submitQuiz` calls `QuizGradingService.gradeQuiz`. This prototype-scoped Strategy
+context calls `setStrategy` per question. `DeterministicGradingStrategy.grade` compares
+objective choices (including binary True/False choices when present); F08 currently
+creates MCQs and short answers. `AIGradingStrategy.grade` handles short answers, using
+an exact NFC/whitespace/case/punctuation-normalized match without AI, otherwise singleton `AIEngine.generate`.
+The fixed server rubric gives 0/0.5/1 credit fractions multiplied by stored points.
+Java computes weighted totals. Grading validates keys/point values/source criteria
+before any model calls. Contexts and model-call budgets are isolated per submission.
+
+The model returns a categorical verdict and reason code. Java assigns 0/0.5/1 credit
+and builds feedback and review facts from the saved key and source statement.
+Limits: one model repair per question and 40 calls / 180 seconds. AI failures never produce fallback
+marks or partial grades. UI responses stay in the form, and saved drafts/versions
+remain unchanged on failure. `QuizSubmissionPersistence` atomically finishes the
+attempt and inserts `quiz_grades`; storage failures roll back both. Attempt locks and
+version checks reject competing writes with 409. Completed answers/grades are immutable.
+
+`GradeRepository.recentForCourse` supplies the latest graded attempt for each of up to
+five recent quizzes to PlanningAgent. Correct retakes replace earlier weaknesses in
+that planning snapshot. Saved plans change only on regeneration. AI feedback may be
+wrong and needs source review. Usage in saved results covers successful operations;
+-1 token counts mean unavailable. No new dependency or AI configuration is required.
